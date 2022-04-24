@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\Data\samplePlugin.json">
+    <Content Include="..\Data\TimersOnSkills.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\Data\goat.png">
@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
+    <PackageReference Include="ILRepack" Version="2.0.18" />
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
       <Private>false</Private>
@@ -63,6 +64,9 @@
       <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
       <Private>false</Private>
     </Reference>
+	<Reference Include="FFXIVClientStructs">
+		<HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+	</Reference>
   </ItemGroup>
 
 </Project>
