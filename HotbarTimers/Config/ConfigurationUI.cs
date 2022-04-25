@@ -68,7 +68,7 @@ namespace HotbarTimers
                 ImGui.Separator();
 
                 string[] jobs = GameJobsList
-                    .Where(job => job.ItemSoulCrystal.Row != 0 && !job.IsLimitedJob && job.CanQueueForDuty)
+                    .Where(job => job.ItemSoulCrystal.Row != 0 && !job.IsLimitedJob && job.DohDolJobIndex == -1)
                     .OrderBy(job => job.Abbreviation.RawString)
                     .Select(job => job.Abbreviation.RawString).ToArray();
                 
@@ -103,7 +103,6 @@ namespace HotbarTimers
                         string skill = timerConfig.Skill;
                         bool enabled = timerConfig.Enabled;
                         bool selfOnly = timerConfig.SelfOnly;
-                        var height = ImGui.GetItemRectSize().Y;
                         ImGui.TableNextRow();
 
                         //Status
@@ -146,7 +145,7 @@ namespace HotbarTimers
                         //Delete
                         ImGui.TableSetColumnIndex(columnIndex++);
                         ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(255, 0, 0, 255));
-                        if (ImGui.Button($"X###{row}delete", new Vector2(-1, ImGui.GetStyle().FramePadding.Y)))
+                        if (ImGui.Button($"X###{row}delete", new Vector2(-1, 20)))
                         {
                             configuration.TimerConfigs.Remove(timerConfig);
                             SaveConfig();

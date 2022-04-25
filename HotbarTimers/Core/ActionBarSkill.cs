@@ -39,7 +39,7 @@ namespace HotbarTimers
             
             Combo = CreateComboNode();
             DurationText = CreateTextNode(0, 0, 18, AlignmentType.Center, new ByteColor { R = 255, G = 255, B = 255, A = 255 });
-            StackText = CreateTextNode(-2, -2, 14, AlignmentType.BottomRight, new ByteColor { R = 0, G = 128, B = 255, A = 255 });
+            StackText = CreateTextNode(-3, 5, 14, AlignmentType.TopRight, new ByteColor { R = 0, G = 128, B = 255, A = 255 });
 
             var originalOverlay = NodeList[1];
             UIHelper.Link(originalOverlay, (AtkResNode*)Combo);
@@ -62,8 +62,8 @@ namespace HotbarTimers
             combo->AtkResNode.Type = NodeType.Image;
             combo->AtkResNode.X = -14;
             combo->AtkResNode.Y = -11;
-            combo->AtkResNode.Width = 48;
-            combo->AtkResNode.Height = 48;
+            combo->AtkResNode.Width = rootNode->Width;
+            combo->AtkResNode.Height = rootNode->Height;
             combo->AtkResNode.Flags = 8243;
             combo->AtkResNode.Flags_2 = 1;
             combo->AtkResNode.Flags_2 |= 4;
@@ -106,7 +106,10 @@ namespace HotbarTimers
                 string format = "0";
                 if (remainingTime < 3.0) format = "0.0";
                 DurationText->SetText(remainingTime.ToString(format));
+
                 UIHelper.Show(DurationText);
+                UIHelper.Show(Combo);
+                UIHelper.Hide(OriginalCdText);
             }
 
             if(stackCount > 0)
@@ -115,8 +118,6 @@ namespace HotbarTimers
                 UIHelper.Show(StackText);
             }
                 
-            UIHelper.Show(Combo);
-            UIHelper.Hide(OriginalCdText);
             Visible = true;
         }
 

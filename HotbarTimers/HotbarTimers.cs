@@ -38,13 +38,13 @@ namespace HotbarTimers
             this.PluginInterface = pluginInterface;
             this.CommandManager = commandManager;
             this.Framework = framework;
-            this.TimersManager = new TimersManager(clientState, targetManager, dataManager);
-            
+            if (!FFXIVClientStructs.Resolver.Initialized) FFXIVClientStructs.Resolver.Initialize();
+
             this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             this.Configuration.Initialize(this.PluginInterface);
-
             this.ConfigurationUi = new ConfigurationUI(this.Configuration, dataManager, clientState, OnConfigSave);
-            
+            this.TimersManager = new TimersManager(clientState, targetManager, dataManager);
+
             this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "Access settings"
@@ -52,14 +52,12 @@ namespace HotbarTimers
 
             this.PluginInterface.UiBuilder.Draw += this.ConfigurationUi.Draw;
             this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+            Framework.Update += OnFrameworkUpdate;
 
-            if (!FFXIVClientStructs.Resolver.Initialized) FFXIVClientStructs.Resolver.Initialize();
             var scanner = new SigScanner(true);
             var address = scanner.ScanText(Signature);
             ActionBarHook = new Hook<ActionBarUpdate>(address, ActionBarUpdateDetour);
             ActionBarHook.Enable();
-
-            Framework.Update += OnFrameworkUpdate;
         }
 
         private void OnFrameworkUpdate(Framework framework)
