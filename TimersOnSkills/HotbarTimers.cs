@@ -1,20 +1,20 @@
-﻿using Dalamud.Game.Command;
-using Dalamud.IoC;
-using Dalamud.Plugin;
+﻿using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
-using Dalamud.Data;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using Dalamud.Game.Command;
 using Dalamud.Hooking;
+using Dalamud.IoC;
+using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
-    public sealed unsafe class TimersOnSkills : IDalamudPlugin
+    public sealed unsafe class HotbarTimers : IDalamudPlugin
     {
-        public string Name => "Timers on Skills";
+        public string Name => "Hotbar Timers";
 
-        private const string commandName = "/timersonskills";
+        private const string commandName = "/hotbartimers";
 
         private DalamudPluginInterface PluginInterface { get; init; }
         private CommandManager CommandManager { get; init; }
@@ -27,7 +27,7 @@ namespace TimersOnSkills
         private string Signature = "E8 ?? ?? ?? ?? 83 BB ?? ?? ?? ?? ?? 75 09";
         private Hook<ActionBarUpdate> ActionBarHook;
 
-        public TimersOnSkills(
+        public HotbarTimers(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager,
             ClientState clientState,

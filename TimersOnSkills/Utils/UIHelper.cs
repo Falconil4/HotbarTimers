@@ -1,7 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
     public unsafe class UIHelper
     {

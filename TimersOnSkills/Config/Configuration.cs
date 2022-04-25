@@ -2,9 +2,8 @@
 using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
-using TimersOnSkills.Models;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
     [Serializable]
     public class Configuration : IPluginConfiguration

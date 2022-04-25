@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TimersOnSkills.Models
+namespace HotbarTimers
 {
     [Serializable]
     public class TimerConfig

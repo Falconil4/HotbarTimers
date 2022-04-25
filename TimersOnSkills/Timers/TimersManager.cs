@@ -1,15 +1,14 @@
-﻿using System.Linq;
-using Dalamud.Data;
+﻿using Dalamud.Data;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
-using TimersOnSkills.Models;
+using System.Linq;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
     class TimersManager
     {

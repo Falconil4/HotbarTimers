@@ -1,11 +1,9 @@
-﻿using Dalamud.Data;
-using FFXIVClientStructs.FFXIV.Client.Game;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel;
 using System.Collections.Generic;
-using System.Linq;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
     public unsafe class ActionBarSkillBuilder
     {

@@ -1,9 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System;
-using System.Diagnostics;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
     public unsafe class ActionBarSkill
     {

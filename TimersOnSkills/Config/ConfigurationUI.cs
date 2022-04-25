@@ -1,16 +1,15 @@
 ﻿using Dalamud.Data;
+using Dalamud.Game.ClientState;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using ImGuiNET;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Linq;
-using TimersOnSkills.Models;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Objects.SubKinds;
+using System.Numerics;
 
-namespace TimersOnSkills
+namespace HotbarTimers
 {
     // It is good to have this be disposable in general, in case you ever need it
     // to do any cleanup
@@ -63,7 +62,7 @@ namespace TimersOnSkills
             }
 
             ImGui.SetNextWindowSize(new Vector2(600, 600), ImGuiCond.Appearing);
-            if (ImGui.Begin("Timers on Skills Settings", ref this.settingsVisible,
+            if (ImGui.Begin("Hotbar Timers Settings", ref this.settingsVisible,
                 ImGuiWindowFlags.NoCollapse))
             {
                 ImGui.Separator();
