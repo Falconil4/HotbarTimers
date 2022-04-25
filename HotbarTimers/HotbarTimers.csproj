@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Authors>Falco</Authors>
+    <Authors>Falconil</Authors>
     <Company></Company>
     <Version>0.0.0.1</Version>
-    <Description>Show status timers on the hotbar.</Description>
+    <Description>Display status timers directly on your hotbars.</Description>
     <Copyright></Copyright>
     <PackageProjectUrl>https://github.com/Falconil4/HotbarTimers</PackageProjectUrl>
   </PropertyGroup>
