@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Statuses;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TimersOnSkills
 {
@@ -18,6 +19,8 @@ namespace TimersOnSkills
             {
                 statuses.AddRange(targetCharacter.StatusList);
             }
+
+            statuses = statuses.Where(status => status.SourceID == player.ObjectId).ToList();
             return statuses;
         }
     }
