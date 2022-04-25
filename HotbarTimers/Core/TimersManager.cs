@@ -16,8 +16,8 @@ namespace HotbarTimers
         private TargetManager TargetManager { get; init; }
         private PlayerCharacter? Player { get; init; }
         private ExcelSheet<Action>? GameActionsList { get; init; }
-        private List<ActionBarSkill> ActionBarSkills = new List<ActionBarSkill>();
-        private List<Status> CurrentStatuses = new List<Status>();
+        private List<ActionBarSkill> ActionBarSkills = new();
+        private List<Status> CurrentStatuses = new();
 
         public TimersManager(ClientState clientState, TargetManager targetManager, DataManager dataManager)
         {
@@ -35,11 +35,14 @@ namespace HotbarTimers
 
         public void OnFrameworkUpdate(Configuration configuration)
         {
-            CurrentStatuses = StatusesBuilder.GetCurrentStatuses(Player!, TargetManager);
-            ManageTimers(configuration);
+            if (Player != null)
+            {
+                CurrentStatuses = StatusesBuilder.GetCurrentStatuses(Player, TargetManager);
+                ManageTimers(configuration);
+            }
         }
 
-        public void OnConfigSave(Configuration configuration)
+        public void OnConfigSave()
         {
             foreach (ActionBarSkill skill in ActionBarSkills)
             {
@@ -54,7 +57,7 @@ namespace HotbarTimers
             List<TimerConfig> applicableTimers = configuration.TimerConfigs
                 .Where(timer => timer.Enabled && timer.Job == job).ToList();
 
-            Dictionary<ActionBarSkill, Status?> skillsToChange = new Dictionary<ActionBarSkill, Status?>();
+            Dictionary<ActionBarSkill, Status?> skillsToChange = new();
             foreach (TimerConfig timerConfig in applicableTimers)
             {
                 List<ActionBarSkill> skills = ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill);

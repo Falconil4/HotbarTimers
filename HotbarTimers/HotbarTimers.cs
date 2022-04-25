@@ -24,8 +24,8 @@ namespace HotbarTimers
         private Framework Framework { get; init; }
 
         private delegate byte ActionBarUpdate(AddonActionBarBase* atkUnitBase, NumberArrayData** numberArrayData, StringArrayData** stringArrayData);
-        private string Signature = "E8 ?? ?? ?? ?? 83 BB ?? ?? ?? ?? ?? 75 09";
-        private Hook<ActionBarUpdate> ActionBarHook;
+        private readonly string Signature = "E8 ?? ?? ?? ?? 83 BB ?? ?? ?? ?? ?? 75 09";
+        private readonly Hook<ActionBarUpdate> ActionBarHook;
 
         public HotbarTimers(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -52,7 +52,8 @@ namespace HotbarTimers
 
             this.PluginInterface.UiBuilder.Draw += this.ConfigurationUi.Draw;
             this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-            
+
+            if (!FFXIVClientStructs.Resolver.Initialized) FFXIVClientStructs.Resolver.Initialize();
             var scanner = new SigScanner(true);
             var address = scanner.ScanText(Signature);
             ActionBarHook = new Hook<ActionBarUpdate>(address, ActionBarUpdateDetour);
@@ -87,7 +88,7 @@ namespace HotbarTimers
         
         private void OnConfigSave(Configuration configuration)
         {
-            TimersManager.OnConfigSave(configuration);
+            TimersManager.OnConfigSave();
         }
 
         private void DrawConfigUI()

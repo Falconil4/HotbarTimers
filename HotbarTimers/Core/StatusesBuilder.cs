@@ -10,8 +10,8 @@ namespace HotbarTimers
     {
         public static List<Status> GetCurrentStatuses(PlayerCharacter player, TargetManager targetManager)
         {
-            List<Status> statuses = new List<Status>();
-            statuses.AddRange(player.StatusList);
+            List<Status> statuses = new();
+            if (player.StatusList != null) statuses.AddRange(player.StatusList);
 
             var target = targetManager.Target;
             if (target is BattleChara targetCharacter)
