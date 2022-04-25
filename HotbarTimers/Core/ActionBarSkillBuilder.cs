@@ -9,7 +9,7 @@ namespace HotbarTimers
     {
         private static List<ActionBarSkill> CachedActionBarSkills = new List<ActionBarSkill>();
 
-        public static List<ActionBarSkill> Build(ExcelSheet<Action>? gameActionsList)
+        public static List<ActionBarSkill> Build(ExcelSheet<Action>? gameActionsList, Configuration configuration, bool rebuild = false)
         {
             List<ActionBarSkill> actionBarSkills = new List<ActionBarSkill>();
             if (gameActionsList == null) return actionBarSkills;
@@ -39,10 +39,10 @@ namespace HotbarTimers
                         continue;
                     }
 
-                    if (cachedActionBarSkill == null)
+                    if (cachedActionBarSkill == null || rebuild)
                     {
                         var iconComponent = actionBarSlot->Icon;
-                        cachedActionBarSkill = new ActionBarSkill(actionBarSlot, iconComponent, name!, actionBarIndex, slotIndex);
+                        cachedActionBarSkill = new ActionBarSkill(actionBarSlot, iconComponent, name!, actionBarIndex, slotIndex, configuration);
                     }
                     
                     actionBarSkills.Add(cachedActionBarSkill);

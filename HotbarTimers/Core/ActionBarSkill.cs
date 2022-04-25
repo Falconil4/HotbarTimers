@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using System.Numerics;
 
 namespace HotbarTimers
 {
@@ -21,7 +22,7 @@ namespace HotbarTimers
         private uint NodeIdx = 200;
 
         public ActionBarSkill(ActionBarSlot* actionBarSlot, AtkComponentNode* iconComponent, 
-            string name, int actionBarIndex, int slotIndex)
+            string name, int actionBarIndex, int slotIndex, Configuration configuration)
         {
             ActionBarSlot = actionBarSlot;
             IconComponent = iconComponent;
@@ -29,17 +30,17 @@ namespace HotbarTimers
             ActionBarIndex = actionBarIndex;
             SlotIndex = slotIndex;
 
-            Initialize();
+            Initialize(configuration);
         }
 
-        private void Initialize()
+        private void Initialize(Configuration configuration)
         {
             NodeList = IconComponent->Component->UldManager.NodeList;
             OriginalCdText = (AtkTextNode*)NodeList[13];
-            
+
             Combo = CreateComboNode();
-            DurationText = CreateTextNode(0, 0, 18, AlignmentType.Center, new ByteColor { R = 255, G = 255, B = 255, A = 255 });
-            StackText = CreateTextNode(-3, 5, 14, AlignmentType.TopRight, new ByteColor { R = 0, G = 128, B = 255, A = 255 });
+            DurationText = CreateTextNode(0, 0, 18, AlignmentType.Center, CalculateByteColorFromVector(configuration.StatusTimerTextColor));
+            StackText = CreateTextNode(-3, 5, 14, AlignmentType.TopRight, CalculateByteColorFromVector(configuration.StackCountTextColor));
 
             var originalOverlay = NodeList[1];
             UIHelper.Link(originalOverlay, (AtkResNode*)Combo);
@@ -49,6 +50,17 @@ namespace HotbarTimers
             IconComponent->Component->UldManager.UpdateDrawNodeList();
 
             Hide(true);
+        }
+
+        private ByteColor CalculateByteColorFromVector(Vector4 vector)
+        {
+            return new ByteColor
+            {
+                R = (byte)(vector.X * 255f),
+                G = (byte)(vector.Y * 255f),
+                B = (byte)(vector.Z * 255f),
+                A = (byte)vector.W,
+            };
         }
 
         private AtkImageNode* CreateComboNode()
@@ -110,15 +122,15 @@ namespace HotbarTimers
                 UIHelper.Show(DurationText);
                 UIHelper.Show(Combo);
                 UIHelper.Hide(OriginalCdText);
-            }
 
-            if(stackCount > 0)
-            {
-                StackText->SetText(stackCount.ToString());
-                UIHelper.Show(StackText);
+                if (stackCount > 0)
+                {
+                    StackText->SetText(stackCount.ToString());
+                    UIHelper.Show(StackText);
+                }
+
+                Visible = true;
             }
-                
-            Visible = true;
         }
 
         public void Hide(bool force = false)

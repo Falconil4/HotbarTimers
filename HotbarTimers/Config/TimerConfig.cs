@@ -19,5 +19,18 @@ namespace HotbarTimers
             Job = job;
             SelfOnly = selfOnly;
         }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || !obj.GetType().Equals(this.GetType())) return false;
+
+            var config = (TimerConfig)obj;
+            return Job == config.Job && Status == config.Status && Skill == config.Skill;
+        }
+
+        public override int GetHashCode()
+        {
+            return Job.GetHashCode() + Status.GetHashCode() + Skill.GetHashCode();
+        }
     }
 }

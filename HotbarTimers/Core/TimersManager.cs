@@ -28,9 +28,9 @@ namespace HotbarTimers
             GameActionsList = dataManager.GetExcelSheet<Action>();
         }
 
-        public void OnActionBarUpdate(Configuration configuration)
+        public void OnActionBarUpdate(Configuration configuration, bool rebuild = false)
         {
-            ActionBarSkills = ActionBarSkillBuilder.Build(GameActionsList);
+            ActionBarSkills = ActionBarSkillBuilder.Build(GameActionsList, configuration, rebuild);
             ManageTimers(configuration);        }
 
         public void OnFrameworkUpdate(Configuration configuration)
@@ -42,8 +42,9 @@ namespace HotbarTimers
             }
         }
 
-        public void OnConfigSave()
+        public void OnConfigSave(Configuration configuration)
         {
+            OnActionBarUpdate(configuration, true);
             foreach (ActionBarSkill skill in ActionBarSkills)
             {
                 skill.Hide();

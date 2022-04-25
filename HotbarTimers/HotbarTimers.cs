@@ -86,7 +86,7 @@ namespace HotbarTimers
         
         private void OnConfigSave(Configuration configuration)
         {
-            TimersManager.OnConfigSave();
+            TimersManager.OnConfigSave(configuration);
         }
 
         private void DrawConfigUI()
