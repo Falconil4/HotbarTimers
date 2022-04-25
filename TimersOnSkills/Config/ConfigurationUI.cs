@@ -62,7 +62,7 @@ namespace TimersOnSkills
                 return;
             }
 
-            ImGui.SetNextWindowSize(new Vector2(400, 300), ImGuiCond.Appearing);
+            ImGui.SetNextWindowSize(new Vector2(600, 600), ImGuiCond.Appearing);
             if (ImGui.Begin("Timers on Skills Settings", ref this.settingsVisible,
                 ImGuiWindowFlags.NoCollapse))
             {
@@ -85,10 +85,11 @@ namespace TimersOnSkills
                 ImGui.Separator();
 
                 var tableFlags = ImGuiTableFlags.Borders;
-                if (ImGui.BeginTable("ConfigTable", 4, tableFlags))
+                if (ImGui.BeginTable("ConfigTable", 5, tableFlags))
                 {
                     ImGui.TableSetupColumn("Status",  ImGuiTableColumnFlags.WidthStretch);
-                    ImGui.TableSetupColumn("Skill", ImGuiTableColumnFlags.WidthStretch);
+                    ImGui.TableSetupColumn("Skill name", ImGuiTableColumnFlags.WidthStretch);
+                    ImGui.TableSetupColumn("Only applied by YOU", ImGuiTableColumnFlags.WidthFixed);
                     ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed);
                     ImGui.TableSetupColumn("Delete", ImGuiTableColumnFlags.WidthFixed);
                     ImGui.TableHeadersRow();
@@ -102,9 +103,13 @@ namespace TimersOnSkills
                         string status = timerConfig.Status;
                         string skill = timerConfig.Skill;
                         bool enabled = timerConfig.Enabled;
+                        bool selfOnly = timerConfig.SelfOnly;
+                        var height = ImGui.GetItemRectSize().Y;
                         ImGui.TableNextRow();
 
-                        ImGui.TableSetColumnIndex(0);                        
+                        //Status
+                        int columnIndex = 0;
+                        ImGui.TableSetColumnIndex(columnIndex++);                        
                         ImGui.SetNextItemWidth(-1);
                         if (ImGui.InputTextWithHint($"###{row}statusNameInput", "Status name...", ref status, 100))
                         {
@@ -112,7 +117,8 @@ namespace TimersOnSkills
                             SaveConfig();
                         }
 
-                        ImGui.TableSetColumnIndex(1);
+                        //Skill name
+                        ImGui.TableSetColumnIndex(columnIndex++);
                         ImGui.SetNextItemWidth(-1);
                         if (ImGui.InputTextWithHint($"###{row}skillNameInput", "Skill name...", ref skill, 100))
                         {
@@ -120,16 +126,28 @@ namespace TimersOnSkills
                             SaveConfig();
                         }
 
-                        ImGui.TableSetColumnIndex(2);
+                        //Self applied
+                        ImGui.TableSetColumnIndex(columnIndex++);
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetColumnWidth() / 2f) - ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.X + 1);
+                        if (ImGui.Checkbox($"###{row}selfOnly", ref selfOnly))
+                        {
+                            timerConfig.SelfOnly = selfOnly;
+                            SaveConfig();
+                        };
+
+                        //Enabled
+                        ImGui.TableSetColumnIndex(columnIndex++);
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetColumnWidth() / 2f) - ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.X + 1);
                         if (ImGui.Checkbox($"###{row}enabled", ref enabled))
                         {
                             timerConfig.Enabled = enabled;
                             SaveConfig();
                         };
-
-                        ImGui.TableSetColumnIndex(3);
+                        
+                        //Delete
+                        ImGui.TableSetColumnIndex(columnIndex++);
                         ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(255, 0, 0, 255));
-                        if (ImGui.Button($"X###{row}delete"))
+                        if (ImGui.Button($"X###{row}delete", new Vector2(-1, ImGui.GetStyle().FramePadding.Y)))
                         {
                             configuration.TimerConfigs.Remove(timerConfig);
                             SaveConfig();
@@ -142,7 +160,8 @@ namespace TimersOnSkills
 
                 if (ImGui.Button("Add new row"))
                 {
-                    configuration.TimerConfigs.Add(new TimerConfig("", "", true, jobs[selectedJobIndex]));
+                    var config = new TimerConfig(jobs[selectedJobIndex], "", "", true, true);
+                    configuration.TimerConfigs.Add(config);
                 }
             }
             ImGui.End();

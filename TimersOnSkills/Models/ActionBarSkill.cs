@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using System;
 using System.Diagnostics;
 
 namespace TimersOnSkills
@@ -12,15 +13,14 @@ namespace TimersOnSkills
         public int ActionBarIndex { get; init; }
         public int SlotIndex { get; init; }
 
-
-
-        private AtkImageNode* Combo;
-        private AtkTextNode* Text;
-        private AtkResNode* OriginalOverlay;
-        private AtkResNode* CdText;
-        private AtkResNode* StackText;
-        private bool Visible = false;
         private AtkResNode** NodeList;
+        private AtkImageNode* Combo;
+        private AtkTextNode* DurationText;
+        private AtkTextNode* StackText;
+        private AtkTextNode* OriginalCdText;
+        
+        private bool Visible = false;        
+        private uint NodeIdx = 200;
 
         public ActionBarSkill(ActionBarSlot* actionBarSlot, AtkComponentNode* iconComponent, 
             string name, int actionBarIndex, int slotIndex)
@@ -36,67 +36,89 @@ namespace TimersOnSkills
 
         private void Initialize()
         {
-            var nodeList = IconComponent->Component->UldManager.NodeList;
-            NodeList = nodeList;
-            OriginalOverlay = nodeList[1];
-            CdText = nodeList[13];
-            StackText = nodeList[11];
+            NodeList = IconComponent->Component->UldManager.NodeList;
+            OriginalCdText = (AtkTextNode*)NodeList[13];
+            
+            Combo = CreateComboNode();
+            DurationText = CreateTextNode(0, 0, 18, AlignmentType.Center, new ByteColor { R = 255, G = 255, B = 255, A = 255 });
+            StackText = CreateTextNode(-2, -2, 14, AlignmentType.BottomRight, new ByteColor { R = 0, G = 128, B = 255, A = 255 });
 
-            var originalBorder = (AtkImageNode*)nodeList[4];
-            var rootNode = (AtkResNode*)IconComponent;
-            uint nodeIdx = 200;
-            Combo = UIHelper.CleanAlloc<AtkImageNode>();
-            Combo->Ctor();
-            Combo->AtkResNode.NodeID = nodeIdx + 1;
-            Combo->AtkResNode.Type = NodeType.Image;
-            Combo->AtkResNode.X = -14;
-            Combo->AtkResNode.Y = -11;
-            Combo->AtkResNode.Width = 48;
-            Combo->AtkResNode.Height = 48;
-            Combo->AtkResNode.Flags = 8243;
-            Combo->AtkResNode.Flags_2 = 1;
-            Combo->AtkResNode.Flags_2 |= 4;
-            Combo->WrapMode = 0;
-            Combo->PartId = (ushort)16;
-            Combo->PartsList = originalBorder->PartsList;
-            Combo->AtkResNode.ParentNode = rootNode;
-
-            Text = UIHelper.CleanAlloc<AtkTextNode>();
-            Text->Ctor();
-            Text->AtkResNode.NodeID = nodeIdx + 2;
-            Text->AtkResNode.Type = NodeType.Text;
-            Text->AtkResNode.X = 2;
-            Text->AtkResNode.Y = 3;
-            Text->AtkResNode.Width = 40;
-            Text->AtkResNode.Height = 40;
-            Text->LineSpacing = 40;
-            Text->AlignmentFontType = 20;
-            Text->FontSize = 16;
-            Text->TextFlags = 16;
-            Text->TextColor = new ByteColor { R = 255, G = 255, B = 255, A = 255 };
-            Text->EdgeColor = new ByteColor { R = 51, G = 51, B = 51, A = 255 };
-            Text->AtkResNode.ParentNode = rootNode;
-
-            UIHelper.Link(OriginalOverlay, (AtkResNode*)Combo);
-            UIHelper.Link((AtkResNode*)Combo, (AtkResNode*)Text);
+            var originalOverlay = NodeList[1];
+            UIHelper.Link(originalOverlay, (AtkResNode*)Combo);
+            UIHelper.Link((AtkResNode*)Combo, (AtkResNode*)DurationText);
+            UIHelper.Link((AtkResNode*)DurationText, (AtkResNode*)StackText);
 
             IconComponent->Component->UldManager.UpdateDrawNodeList();
 
             Hide(true);
         }
 
-        public void Show(float remainingTime)
+        private AtkImageNode* CreateComboNode()
         {
-            if (remainingTime >= 0.0)
+            var originalBorder = (AtkImageNode*)NodeList[4];
+            var rootNode = (AtkResNode*)IconComponent;
+            
+            var combo = UIHelper.CleanAlloc<AtkImageNode>();
+            combo->Ctor();
+            combo->AtkResNode.NodeID = NodeIdx++;
+            combo->AtkResNode.Type = NodeType.Image;
+            combo->AtkResNode.X = -14;
+            combo->AtkResNode.Y = -11;
+            combo->AtkResNode.Width = 48;
+            combo->AtkResNode.Height = 48;
+            combo->AtkResNode.Flags = 8243;
+            combo->AtkResNode.Flags_2 = 1;
+            combo->AtkResNode.Flags_2 |= 4;
+            combo->WrapMode = 0;
+            combo->PartId = (ushort)16;
+            combo->PartsList = originalBorder->PartsList;
+            combo->AtkResNode.ParentNode = rootNode;
+
+            return combo;
+        }
+
+        private AtkTextNode* CreateTextNode(float x, float y, byte fontSize, AlignmentType alignmentType, ByteColor textColor)
+        {
+            var rootNode = (AtkResNode*)IconComponent;
+
+            var text = UIHelper.CleanAlloc<AtkTextNode>();
+            text->Ctor();
+            text->AtkResNode.NodeID = NodeIdx++;
+            text->AtkResNode.Type = NodeType.Text;
+
+            text->AtkResNode.X = x;
+            text->AtkResNode.Y = y;
+            text->AtkResNode.Width = rootNode->Width;
+            text->AtkResNode.Height = rootNode->Height;
+            text->LineSpacing = OriginalCdText->LineSpacing;
+            text->AlignmentFontType = (byte)alignmentType;
+            text->FontSize = fontSize;
+            text->TextFlags = OriginalCdText->TextFlags;
+            text->TextColor = textColor;
+            text->EdgeColor = new ByteColor { R = 0, G = 0, B = 0, A = 255 };
+            text->AtkResNode.ParentNode = rootNode;
+
+            return text;
+        }
+
+        public void Show(float remainingTime, int stackCount)
+        {
+            if(remainingTime >= 0.0)
             {
                 string format = "0";
-                if (remainingTime < 1.0) format = "0.0";
-                Text->SetText(remainingTime.ToString(format));
+                if (remainingTime < 3.0) format = "0.0";
+                DurationText->SetText(remainingTime.ToString(format));
+                UIHelper.Show(DurationText);
+            }
+
+            if(stackCount > 0)
+            {
+                StackText->SetText(stackCount.ToString());
+                UIHelper.Show(StackText);
             }
                 
-            UIHelper.Show((AtkResNode*)Combo);
-            UIHelper.Show((AtkResNode*)Text);
-            UIHelper.Hide(CdText);
+            UIHelper.Show(Combo);
+            UIHelper.Hide(OriginalCdText);
             Visible = true;
         }
 
@@ -104,11 +126,10 @@ namespace TimersOnSkills
         {
             if (Visible || force)
             {
-                Text->SetText("");
-
-                UIHelper.Show(CdText);
-                UIHelper.Hide((AtkResNode*)Combo);
-                UIHelper.Hide((AtkResNode*)Text);
+                UIHelper.Show(OriginalCdText);
+                UIHelper.Hide(Combo);
+                UIHelper.Hide(DurationText);
+                UIHelper.Hide(StackText);
                 Visible = false;
             }
         }

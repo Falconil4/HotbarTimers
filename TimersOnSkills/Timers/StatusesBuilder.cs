@@ -20,7 +20,6 @@ namespace TimersOnSkills
                 statuses.AddRange(targetCharacter.StatusList);
             }
 
-            statuses = statuses.Where(status => status.SourceID == player.ObjectId).ToList();
             return statuses;
         }
     }

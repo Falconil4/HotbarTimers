@@ -59,21 +59,27 @@ namespace TimersOnSkills
             foreach (TimerConfig timerConfig in applicableTimers)
             {
                 List<ActionBarSkill> skills = ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill);
-                Status? status = CurrentStatuses.Find(x => x.GameData.Name == timerConfig.Status);
-
+                Status? currentStatus = CurrentStatuses.Find(
+                    status => status.GameData.Name == timerConfig.Status &&
+                    (!timerConfig.SelfOnly || status.SourceID == Player!.ObjectId)
+                );
+                
                 foreach (ActionBarSkill skill in skills)
                 {
-                    if (!skillsToChange.ContainsKey(skill)) skillsToChange.Add(skill, status);
+                    if (!skillsToChange.ContainsKey(skill)) skillsToChange.Add(skill, currentStatus);
                     else
                     {
-                        if (skillsToChange[skill] == null) skillsToChange[skill] = status;
+                        if (skillsToChange[skill] == null) skillsToChange[skill] = currentStatus;
                     }
                 }
 
                 foreach(KeyValuePair<ActionBarSkill, Status?> skillToChange in skillsToChange)
                 {
-                    if (skillToChange.Value != null) skillToChange.Key.Show(skillToChange.Value.RemainingTime);
-                    else skillToChange.Key.Hide();
+                    ActionBarSkill skill = skillToChange.Key;
+                    Status? status = skillToChange.Value;
+
+                    if (status != null) skill.Show(status.RemainingTime, status.StackCount);
+                    else skill.Hide();
                 }
             }
         }
