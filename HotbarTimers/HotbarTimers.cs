@@ -68,8 +68,15 @@ namespace HotbarTimers
         private byte ActionBarUpdateDetour(AddonActionBarBase* atkUnitBase, NumberArrayData** numberArrayData, StringArrayData** stringArrayData)
         {
             TimersManager.OnActionBarUpdate(Configuration);
-            var res = ActionBarHook.Original(atkUnitBase, numberArrayData, stringArrayData);
-            return res;
+            return ActionBarHook.Original(atkUnitBase, numberArrayData, stringArrayData);
+        }
+
+        private void OnCommand(string command, string args) => DrawConfigUI();
+        private void OnConfigSave(Configuration configuration) => TimersManager.OnConfigSave(configuration);
+
+        private void DrawConfigUI()
+        {
+            this.ConfigurationUi.SettingsVisible = true;
         }
 
         public void Dispose()
@@ -80,18 +87,8 @@ namespace HotbarTimers
 
             ActionBarHook.Disable();
             ActionBarHook.Dispose();
-        }
 
-        private void OnCommand(string command, string args) => DrawConfigUI();
-        
-        private void OnConfigSave(Configuration configuration)
-        {
-            TimersManager.OnConfigSave(configuration);
-        }
-
-        private void DrawConfigUI()
-        {
-            this.ConfigurationUi.SettingsVisible = true;
+            TimersManager.Dispose();
         }
     }
 }

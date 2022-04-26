@@ -44,5 +44,15 @@ namespace HotbarTimers
             next->PrevSiblingNode = prev;
             prev->NextSiblingNode = next;
         }
+
+        public static void Dispose(AtkImageNode* imageNode)
+        {
+            imageNode->UnloadTexture();
+            Dispose((AtkResNode*)imageNode);
+        }
+        public static void Dispose(AtkResNode* node)
+        {
+            node->Destroy(true);
+        }
     }
 }

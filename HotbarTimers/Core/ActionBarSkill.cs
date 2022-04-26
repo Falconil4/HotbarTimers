@@ -1,10 +1,11 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using System;
 using System.Numerics;
 
 namespace HotbarTimers
 {
-    public unsafe class ActionBarSkill
+    public unsafe class ActionBarSkill : IDisposable
     {
         public ActionBarSlot* ActionBarSlot { get; init; }
         public AtkComponentNode* IconComponent { get; init; }
@@ -137,5 +138,13 @@ namespace HotbarTimers
         }
 
         public override string ToString() => $"{Name}; Action Bar: {ActionBarIndex}; Slot: {SlotIndex}";
+
+        public void Dispose()
+        {
+            UIHelper.Dispose(Combo);
+            UIHelper.Dispose((AtkResNode*)DurationText);
+            UIHelper.Dispose((AtkResNode*)StackText);
+            GC.SuppressFinalize(this);
+        }
     }
 }

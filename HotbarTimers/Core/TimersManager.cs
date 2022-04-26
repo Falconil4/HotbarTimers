@@ -86,5 +86,13 @@ namespace HotbarTimers
                 }
             }
         }
+
+        public void Dispose()
+        {
+            foreach(ActionBarSkill skill in ActionBarSkills)
+            {
+                skill.Dispose();
+            }
+        }
     }
 }
