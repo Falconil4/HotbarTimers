@@ -3,7 +3,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace HotbarTimers
 {
-    public unsafe class UIHelper
+    public unsafe static class UIHelper
     {
         public static T* CleanAlloc<T>() where T : unmanaged
         {

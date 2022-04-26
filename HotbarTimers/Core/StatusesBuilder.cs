@@ -14,10 +14,7 @@ namespace HotbarTimers
             if (player.StatusList != null) statuses.AddRange(player.StatusList);
 
             var target = targetManager.Target;
-            if (target is BattleChara targetCharacter)
-            {
-                statuses.AddRange(targetCharacter.StatusList);
-            }
+            if (target is BattleChara targetCharacter) statuses.AddRange(targetCharacter.StatusList);
 
             return statuses;
         }

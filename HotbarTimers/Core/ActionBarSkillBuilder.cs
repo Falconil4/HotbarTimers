@@ -7,11 +7,11 @@ namespace HotbarTimers
 {
     public unsafe class ActionBarSkillBuilder
     {
-        private static List<ActionBarSkill> CachedActionBarSkills = new List<ActionBarSkill>();
+        private static List<ActionBarSkill> CachedActionBarSkills = new();
 
         public static List<ActionBarSkill> Build(ExcelSheet<Action>? gameActionsList, Configuration configuration, bool rebuild = false)
         {
-            List<ActionBarSkill> actionBarSkills = new List<ActionBarSkill>();
+            List<ActionBarSkill> actionBarSkills = new();
             if (gameActionsList == null) return actionBarSkills;
 
             var actionManager = ActionManager.Instance();

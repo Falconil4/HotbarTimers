@@ -39,8 +39,10 @@ namespace HotbarTimers
             OriginalCdText = (AtkTextNode*)NodeList[13];
 
             Combo = CreateComboNode();
-            DurationText = CreateTextNode(0, 0, 18, AlignmentType.Center, CalculateByteColorFromVector(configuration.StatusTimerTextColor));
-            StackText = CreateTextNode(-3, 5, 14, AlignmentType.TopRight, CalculateByteColorFromVector(configuration.StackCountTextColor));
+            DurationText = CreateTextNode(0, 0, AlignmentType.Center, 
+                configuration.StatusTimerFontSize, GeneralUtils.CalculateByteColorFromVector(configuration.StatusTimerFontColor));
+            StackText = CreateTextNode(-3, 5, AlignmentType.TopRight, 
+                configuration.StackCountFontSize, GeneralUtils.CalculateByteColorFromVector(configuration.StackCountFontColor));
 
             var originalOverlay = NodeList[1];
             UIHelper.Link(originalOverlay, (AtkResNode*)Combo);
@@ -50,17 +52,6 @@ namespace HotbarTimers
             IconComponent->Component->UldManager.UpdateDrawNodeList();
 
             Hide(true);
-        }
-
-        private ByteColor CalculateByteColorFromVector(Vector4 vector)
-        {
-            return new ByteColor
-            {
-                R = (byte)(vector.X * 255f),
-                G = (byte)(vector.Y * 255f),
-                B = (byte)(vector.Z * 255f),
-                A = (byte)vector.W,
-            };
         }
 
         private AtkImageNode* CreateComboNode()
@@ -87,7 +78,7 @@ namespace HotbarTimers
             return combo;
         }
 
-        private AtkTextNode* CreateTextNode(float x, float y, byte fontSize, AlignmentType alignmentType, ByteColor textColor)
+        private AtkTextNode* CreateTextNode(float x, float y, AlignmentType alignmentType, int fontSize, ByteColor fontColor)
         {
             var rootNode = (AtkResNode*)IconComponent;
 
@@ -102,9 +93,9 @@ namespace HotbarTimers
             text->AtkResNode.Height = rootNode->Height;
             text->LineSpacing = OriginalCdText->LineSpacing;
             text->AlignmentFontType = (byte)alignmentType;
-            text->FontSize = fontSize;
+            text->FontSize = (byte)fontSize;
             text->TextFlags = OriginalCdText->TextFlags;
-            text->TextColor = textColor;
+            text->TextColor = fontColor;
             text->EdgeColor = new ByteColor { R = 0, G = 0, B = 0, A = 255 };
             text->AtkResNode.ParentNode = rootNode;
 
@@ -145,9 +136,6 @@ namespace HotbarTimers
             }
         }
 
-        public override string ToString()
-        {
-            return $"{Name}; Action Bar: {ActionBarIndex}; Slot: {SlotIndex}";
-        }
+        public override string ToString() => $"{Name}; Action Bar: {ActionBarIndex}; Slot: {SlotIndex}";
     }
 }

@@ -15,7 +15,7 @@ namespace HotbarTimers
 {
     class ConfigurationUI : IDisposable
     {
-        private Configuration configuration;
+        private readonly Configuration Configuration;
         private ExcelSheet<ClassJob>? GameJobsList { get; init; }
         private ExcelSheet<Action>? GameActionsList { get; init; }
         private ExcelSheet<Status>? GameStatusList { get; init; }
@@ -34,7 +34,7 @@ namespace HotbarTimers
         public ConfigurationUI(Configuration configuration, DataManager dataManager, 
             ClientState clientState, Action<Configuration> onConfigSave)
         {
-            this.configuration = configuration;
+            this.Configuration = configuration;
             GameJobsList = dataManager.GetExcelSheet<ClassJob>();
             GameActionsList = dataManager.GetExcelSheet<Action>();
             GameStatusList = dataManager.GetExcelSheet<Status>();
@@ -43,11 +43,7 @@ namespace HotbarTimers
         }
 
         public void Dispose() {}
-
-        public void Draw()
-        {
-            DrawSettingsWindow();
-        }
+        public void Draw() => DrawSettingsWindow();
 
         public void DrawSettingsWindow()
         {
@@ -87,8 +83,8 @@ namespace HotbarTimers
                             var sameNamesConfigs = GetSameNameConfigs(selectedJob);
                             foreach (TimerConfig config in sameNamesConfigs)
                             {
-                                if (!configuration.TimerConfigs.Contains(config))
-                                    configuration.TimerConfigs.Add(config);
+                                if (!Configuration.TimerConfigs.Contains(config))
+                                    Configuration.TimerConfigs.Add(config);
                             }
                             SaveConfig();
                         }
@@ -100,7 +96,7 @@ namespace HotbarTimers
                         ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (removeAllButtonWidth + 20));
                         if (ImGui.Button("Remove All", new Vector2(removeAllButtonWidth, 20)))
                         {
-                            configuration.TimerConfigs.RemoveAll(config => config.Job == selectedJob);
+                            Configuration.TimerConfigs.RemoveAll(config => config.Job == selectedJob);
                             SaveConfig();
                         }
                         ImGui.PopStyleColor();
@@ -115,7 +111,7 @@ namespace HotbarTimers
                             ImGui.TableSetupColumn("Delete", ImGuiTableColumnFlags.WidthFixed);
                             ImGui.TableHeadersRow();
 
-                            List<TimerConfig> applicableTimers = configuration.TimerConfigs
+                            List<TimerConfig> applicableTimers = Configuration.TimerConfigs
                                 .Where(timer => timer.Job == selectedJob).ToList();
 
                             for (int row = 0; row < applicableTimers.Count; row++)
@@ -169,7 +165,7 @@ namespace HotbarTimers
                                 ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(255, 0, 0, 255));
                                 if (ImGui.Button($"X###{row}delete", new Vector2(-1, 20)))
                                 {
-                                    configuration.TimerConfigs.Remove(timerConfig);
+                                    Configuration.TimerConfigs.Remove(timerConfig);
                                     SaveConfig();
                                 };
                                 ImGui.PopStyleColor(1);
@@ -181,7 +177,7 @@ namespace HotbarTimers
                         if (ImGui.Button("Add new row"))
                         {
                             var config = new TimerConfig(jobs[selectedJobIndex], "", "", true, true);
-                            configuration.TimerConfigs.Add(config);
+                            Configuration.TimerConfigs.Add(config);
                         }
 
                         ImGui.EndTabItem();
@@ -189,19 +185,37 @@ namespace HotbarTimers
 
                     if (ImGui.BeginTabItem("Misc"))
                     {
-                        var statusTimerTextColor = configuration.StatusTimerTextColor;
-                        ImGui.Text("Status timer text color:");
-                        if (ImGui.ColorEdit4("###statusTimerTextColorEdit", ref statusTimerTextColor))
+                        //status timer
+                        ImGui.Text("Status timer settings:");
+                        var statusTimerFontSize = Configuration.StatusTimerFontSize;
+                        if (ImGui.SliderInt("Font size: ###statusTimerFontSize", ref statusTimerFontSize, 6, 30))
                         {
-                            configuration.StatusTimerTextColor = statusTimerTextColor;
+                            Configuration.StatusTimerFontSize = statusTimerFontSize;
                             SaveConfig();
                         }
 
-                        var stackCountTextColor = configuration.StackCountTextColor;
-                        ImGui.Text("Timer stack count text color:");
-                        if (ImGui.ColorEdit4("###stackCountColorEdit", ref stackCountTextColor))
+                        var statusTimerFontColor = Configuration.StatusTimerFontColor;
+                        if (ImGui.ColorEdit4("Font color: ###statusTimerTextColorEdit", ref statusTimerFontColor))
                         {
-                            configuration.StackCountTextColor = stackCountTextColor;
+                            Configuration.StatusTimerFontColor = statusTimerFontColor;
+                            SaveConfig();
+                        }
+
+                        ImGui.Separator();
+
+                        //stack count
+                        ImGui.Text("Stack count settings:");
+                        var stackCountFontSize = Configuration.StackCountFontSize;
+                        if (ImGui.SliderInt("Font size: ###stackCountFontSize", ref stackCountFontSize, 6, 30))
+                        {
+                            Configuration.StackCountFontSize = stackCountFontSize;
+                            SaveConfig();
+                        }
+
+                        var stackCountFontColor = Configuration.StackCountFontColor;
+                        if (ImGui.ColorEdit4("Font color: ###stackCountColorEdit", ref stackCountFontColor))
+                        {
+                            Configuration.StackCountFontColor = stackCountFontColor;
                             SaveConfig();
                         }
 
@@ -217,9 +231,9 @@ namespace HotbarTimers
 
         private void SaveConfig()
         {
-            configuration.TimerConfigs.RemoveAll(timer => String.IsNullOrEmpty(timer.Skill) && String.IsNullOrEmpty(timer.Status));
-            configuration.Save();
-            OnConfigSave(configuration);
+            Configuration.TimerConfigs.RemoveAll(timer => String.IsNullOrEmpty(timer.Skill) && String.IsNullOrEmpty(timer.Status));
+            Configuration.Save();
+            OnConfigSave(Configuration);
         }
 
         private List<TimerConfig> GetSameNameConfigs(string currentJob)
