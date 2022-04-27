@@ -1,6 +1,8 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace HotbarTimers
@@ -26,13 +28,13 @@ namespace HotbarTimers
                     var actionBarSlot = &actionBar[slotIndex];
                     var actionId = actionManager->GetAdjustedActionId((uint)actionBarSlot->ActionId);
                     var name = gameActionsList.GetRow(actionId)?.Name?.RawString;
-                    
-                    ActionBarSkill? cachedActionBarSkill = CachedActionBarSkills.Find(s => 
-                        s.ActionBarIndex == actionBarIndex 
+
+                    ActionBarSkill? cachedActionBarSkill = CachedActionBarSkills.Find(s =>
+                        s.ActionBarIndex == actionBarIndex
                         && s.SlotIndex == slotIndex
                         && s.Name == name
                     );
-                    
+
                     if (IsSlotEmpty(actionBarSlot, name))
                     {
                         if (cachedActionBarSkill != null) CachedActionBarSkills.Remove(cachedActionBarSkill);
@@ -44,7 +46,7 @@ namespace HotbarTimers
                         var iconComponent = actionBarSlot->Icon;
                         cachedActionBarSkill = new ActionBarSkill(actionBarSlot, iconComponent, name!, actionBarIndex, slotIndex, configuration);
                     }
-                    
+
                     actionBarSkills.Add(cachedActionBarSkill);
                 }
             }

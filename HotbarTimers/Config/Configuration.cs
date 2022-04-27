@@ -11,11 +11,9 @@ namespace HotbarTimers
     {
         public int Version { get; set; } = 0;
 
-        public List<TimerConfig> TimerConfigs { get; set; } = new List<TimerConfig>();
-        public int StatusTimerFontSize { get; set; } = 18;
-        public Vector4 StatusTimerFontColor { get; set; } = new Vector4(1, 1, 1, 255);
-        public int StackCountFontSize { get; set; } = 14;
-        public Vector4 StackCountFontColor { get; set; } = new Vector4(1, 0.5f, 0, 255);
+        public List<TimerConfig> TimerConfigs { get; set; } = new();
+        public TextConfig StatusTimerTextConfig { get; set; } = new(FontType.Type1, 16, new Vector4(1, 1, 1, 255));
+        public TextConfig StackCountTextConfig { get; set; } = new(FontType.Type1, 13, new Vector4(1, 0.5f, 0, 255));
         
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;
@@ -29,4 +27,6 @@ namespace HotbarTimers
             this.pluginInterface!.SavePluginConfig(this);
         }
     }
+
+    public enum FontType { Type1, Type2, Type3, Type4, Type5 }
 }

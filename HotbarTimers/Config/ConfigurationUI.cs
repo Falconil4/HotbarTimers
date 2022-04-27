@@ -76,7 +76,7 @@ namespace HotbarTimers
                             SelectedJobIndex = selectedJobIndex;
                         };
                         ImGui.Separator();
-
+                        
                         ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(255, 255, 0, 255));
                         if (ImGui.Button("Populate with all skills with the same status names"))
                         {
@@ -92,8 +92,8 @@ namespace HotbarTimers
 
                         var removeAllButtonWidth = 130;
                         ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(255, 0, 0, 255));
-                        ImGui.SameLine();
                         ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (removeAllButtonWidth + 20));
+                        ImGui.SameLine();
                         if (ImGui.Button("Remove All", new Vector2(removeAllButtonWidth, 20)))
                         {
                             Configuration.TimerConfigs.RemoveAll(config => config.Job == selectedJob);
@@ -187,37 +187,52 @@ namespace HotbarTimers
                     {
                         //status timer
                         ImGui.Text("Status timer settings:");
-                        var statusTimerFontSize = Configuration.StatusTimerFontSize;
-                        if (ImGui.SliderInt("Font size: ###statusTimerFontSize", ref statusTimerFontSize, 6, 30))
+                        var statusTimerFontSize = Configuration.StatusTimerTextConfig.FontSize;
+                        if (ImGui.SliderInt("Font size###statusTimerFontSize", ref statusTimerFontSize, 6, 30))
                         {
-                            Configuration.StatusTimerFontSize = statusTimerFontSize;
+                            Configuration.StatusTimerTextConfig.FontSize = statusTimerFontSize;
                             SaveConfig();
                         }
 
-                        var statusTimerFontColor = Configuration.StatusTimerFontColor;
-                        if (ImGui.ColorEdit4("Font color: ###statusTimerTextColorEdit", ref statusTimerFontColor))
+                        var statusTimerFontColor = Configuration.StatusTimerTextConfig.FontColor;
+                        if (ImGui.ColorEdit4("Font color###statusTimerTextColorEdit", ref statusTimerFontColor))
                         {
-                            Configuration.StatusTimerFontColor = statusTimerFontColor;
+                            Configuration.StatusTimerTextConfig.FontColor = statusTimerFontColor;
                             SaveConfig();
                         }
+
+                        var fontTypes = Enum.GetValues<FontType>().Select(f => f.ToString()).ToArray();
+                        var statusTimerFontType = (int)Configuration.StatusTimerTextConfig.FontType;
+                        if (ImGui.Combo("Font type###statusTimerFontType", ref statusTimerFontType, fontTypes, fontTypes.Length))
+                        {
+                            Configuration.StatusTimerTextConfig.FontType = (FontType)statusTimerFontType;
+                            SaveConfig();
+                        };
 
                         ImGui.Separator();
 
                         //stack count
                         ImGui.Text("Stack count settings:");
-                        var stackCountFontSize = Configuration.StackCountFontSize;
-                        if (ImGui.SliderInt("Font size: ###stackCountFontSize", ref stackCountFontSize, 6, 30))
+                        var stackCountFontSize = Configuration.StackCountTextConfig.FontSize;
+                        if (ImGui.SliderInt("Font size###stackCountFontSize", ref stackCountFontSize, 6, 30))
                         {
-                            Configuration.StackCountFontSize = stackCountFontSize;
+                            Configuration.StackCountTextConfig.FontSize = stackCountFontSize;
                             SaveConfig();
                         }
 
-                        var stackCountFontColor = Configuration.StackCountFontColor;
-                        if (ImGui.ColorEdit4("Font color: ###stackCountColorEdit", ref stackCountFontColor))
+                        var stackCountFontColor = Configuration.StackCountTextConfig.FontColor;
+                        if (ImGui.ColorEdit4("Font color###stackCountColorEdit", ref stackCountFontColor))
                         {
-                            Configuration.StackCountFontColor = stackCountFontColor;
+                            Configuration.StackCountTextConfig.FontColor = stackCountFontColor;
                             SaveConfig();
                         }
+
+                        var stackCountFontType = (int)Configuration.StackCountTextConfig.FontType;
+                        if (ImGui.Combo("Font type###stackCountFontType", ref stackCountFontType, fontTypes, fontTypes.Length))
+                        {
+                            Configuration.StackCountTextConfig.FontType = (FontType)stackCountFontType;
+                            SaveConfig();
+                        };
 
                         ImGui.EndTabItem();
                     }

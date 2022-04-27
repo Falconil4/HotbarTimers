@@ -44,9 +44,9 @@ namespace HotbarTimers
             "_ActionBar07",
             "_ActionBar08",
             "_ActionBar09",
-            "_ActionCross",
-            "_ActionDoubleCrossL",
-            "_ActionDoubleCrossR"
+            //"_ActionCross",
+            //"_ActionDoubleCrossL",
+            //"_ActionDoubleCrossR"
         };
 
         public static readonly int SlotsCount = 12;

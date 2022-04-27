@@ -38,7 +38,7 @@ namespace HotbarTimers
             this.PluginInterface = pluginInterface;
             this.CommandManager = commandManager;
             this.Framework = framework;
-            if (!FFXIVClientStructs.Resolver.Initialized) FFXIVClientStructs.Resolver.Initialize();
+            if (FFXIVClientStructs.Resolver.Initialized == false) FFXIVClientStructs.Resolver.Initialize();
 
             this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             this.Configuration.Initialize(this.PluginInterface);
