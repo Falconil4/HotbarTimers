@@ -13,15 +13,15 @@ namespace HotbarTimers
     public sealed unsafe class HotbarTimers : IDalamudPlugin
     {
         public string Name => "Hotbar Timers";
-
         private const string commandName = "/hotbartimers";
 
         private DalamudPluginInterface PluginInterface { get; init; }
         private CommandManager CommandManager { get; init; }
+        private Framework Framework { get; init; }
         private Configuration Configuration { get; init; }
         private ConfigurationUI ConfigurationUi { get; init; }
         private TimersManager TimersManager { get; init; }
-        private Framework Framework { get; init; }
+        
 
         private delegate byte ActionBarUpdate(AddonActionBarBase* atkUnitBase, NumberArrayData** numberArrayData, StringArrayData** stringArrayData);
         private readonly string Signature = "E8 ?? ?? ?? ?? 83 BB ?? ?? ?? ?? ?? 75 09";
@@ -35,23 +35,23 @@ namespace HotbarTimers
             DataManager dataManager,
             Framework framework)
         {
-            this.PluginInterface = pluginInterface;
-            this.CommandManager = commandManager;
-            this.Framework = framework;
+            PluginInterface = pluginInterface;
+            CommandManager = commandManager;
+            Framework = framework;
             if (FFXIVClientStructs.Resolver.Initialized == false) FFXIVClientStructs.Resolver.Initialize();
 
-            this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            this.Configuration.Initialize(this.PluginInterface);
-            this.ConfigurationUi = new ConfigurationUI(this.Configuration, dataManager, clientState, OnConfigSave);
-            this.TimersManager = new TimersManager(clientState, targetManager, dataManager);
+            Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            Configuration.Initialize(PluginInterface);
+            ConfigurationUi = new ConfigurationUI(Configuration, dataManager, clientState, OnConfigSave);
+            TimersManager = new TimersManager(clientState, targetManager, dataManager);
 
-            this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+            CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "Access settings"
             });
 
-            this.PluginInterface.UiBuilder.Draw += this.ConfigurationUi.Draw;
-            this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+            PluginInterface.UiBuilder.Draw += this.ConfigurationUi.Draw;
+            PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
             Framework.Update += OnFrameworkUpdate;
 
             var scanner = new SigScanner(true);
@@ -81,8 +81,8 @@ namespace HotbarTimers
 
         public void Dispose()
         {
-            this.ConfigurationUi.Dispose();
-            this.CommandManager.RemoveHandler(commandName);
+            ConfigurationUi.Dispose();
+            CommandManager.RemoveHandler(commandName);
             Framework.Update -= OnFrameworkUpdate;
 
             ActionBarHook.Disable();

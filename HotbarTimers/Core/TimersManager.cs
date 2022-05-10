@@ -14,7 +14,6 @@ namespace HotbarTimers
     {
         private ClientState ClientState { get; init; }
         private TargetManager TargetManager { get; init; }
-        private PlayerCharacter? Player { get; init; }
         private ExcelSheet<Action>? GameActionsList { get; init; }
         private List<ActionBarSkill> ActionBarSkills = new();
         private List<Status> CurrentStatuses = new();
@@ -24,7 +23,6 @@ namespace HotbarTimers
             ClientState = clientState;
             TargetManager = targetManager;
             
-            Player = ClientState.LocalPlayer;
             GameActionsList = dataManager.GetExcelSheet<Action>();
         }
 
@@ -35,9 +33,9 @@ namespace HotbarTimers
 
         public void OnFrameworkUpdate(Configuration configuration)
         {
-            if (Player != null)
+            if (ClientState.LocalPlayer != null)
             {
-                CurrentStatuses = StatusesBuilder.GetCurrentStatuses(Player, TargetManager);
+                CurrentStatuses = StatusesBuilder.GetCurrentStatuses(ClientState.LocalPlayer, TargetManager);
                 ManageTimers(configuration);
             }
         }
@@ -53,7 +51,7 @@ namespace HotbarTimers
 
         public void ManageTimers(Configuration configuration)
         {
-            string? job = Player?.ClassJob?.GameData?.Abbreviation?.RawString;
+            string? job = ClientState.LocalPlayer?.ClassJob?.GameData?.Abbreviation?.RawString;
             if (job == null) return;
             List<TimerConfig> applicableTimers = configuration.TimerConfigs
                 .Where(timer => timer.Enabled && timer.Job == job).ToList();
@@ -64,7 +62,7 @@ namespace HotbarTimers
                 List<ActionBarSkill> skills = ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill);
                 Status? currentStatus = CurrentStatuses.Find(
                     status => status.GameData.Name == timerConfig.Status &&
-                    (!timerConfig.SelfOnly || status.SourceID == Player!.ObjectId)
+                    (!timerConfig.SelfOnly || status.SourceID == ClientState.LocalPlayer!.ObjectId)
                 );
                 
                 foreach (ActionBarSkill skill in skills)

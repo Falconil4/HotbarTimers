@@ -19,7 +19,8 @@ namespace HotbarTimers
         private ExcelSheet<ClassJob>? GameJobsList { get; init; }
         private ExcelSheet<Action>? GameActionsList { get; init; }
         private ExcelSheet<Status>? GameStatusList { get; init; }
-        private PlayerCharacter? Player { get; init; }
+        private ClientState ClientState { get; init; }
+
         private int? SelectedJobIndex;
 
         private Action<Configuration> OnConfigSave { get; init; }
@@ -38,7 +39,7 @@ namespace HotbarTimers
             GameJobsList = dataManager.GetExcelSheet<ClassJob>();
             GameActionsList = dataManager.GetExcelSheet<Action>();
             GameStatusList = dataManager.GetExcelSheet<Status>();
-            Player = clientState.LocalPlayer;
+            ClientState = clientState;
             OnConfigSave = onConfigSave;
         }
 
@@ -47,7 +48,7 @@ namespace HotbarTimers
 
         public void DrawSettingsWindow()
         {
-            if (!SettingsVisible || GameJobsList == null || Player?.ClassJob?.GameData == null)
+            if (!SettingsVisible || GameJobsList == null || ClientState.LocalPlayer?.ClassJob?.GameData == null)
             {
                 return;
             }
@@ -65,7 +66,7 @@ namespace HotbarTimers
                             .OrderBy(job => job.Abbreviation.RawString)
                             .Select(job => job.Abbreviation.RawString).ToArray();
 
-                        string currentJob = Player.ClassJob.GameData.Abbreviation.RawString;
+                        string currentJob = ClientState.LocalPlayer.ClassJob.GameData.Abbreviation.RawString;
                         int currentJobIndex = Math.Max(0, Array.FindIndex(jobs, job => job == currentJob));
 
                         int selectedJobIndex = SelectedJobIndex ?? currentJobIndex;
