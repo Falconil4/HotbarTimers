@@ -62,7 +62,7 @@ namespace HotbarTimers
 
         private void OnFrameworkUpdate(Framework framework)
         {
-            TimersManager.OnFrameworkUpdate(Configuration);
+            TimersManager.OnFrameworkUpdate();
         }
 
         private byte ActionBarUpdateDetour(AddonActionBarBase* atkUnitBase, NumberArrayData** numberArrayData, StringArrayData** stringArrayData)

@@ -18,6 +18,9 @@ namespace HotbarTimers
         private List<ActionBarSkill> ActionBarSkills = new();
         private List<Status> CurrentStatuses = new();
 
+        private List<TimerConfig> ApplicableTimers = new();
+        private List<ActionBarSkill> ApplicableSkills = new();
+
         public TimersManager(ClientState clientState, TargetManager targetManager, DataManager dataManager)
         {
             ClientState = clientState;
@@ -29,14 +32,18 @@ namespace HotbarTimers
         public void OnActionBarUpdate(Configuration configuration, bool rebuild = false)
         {
             ActionBarSkills = ActionBarSkillBuilder.Build(GameActionsList, configuration, rebuild);
-            ManageTimers(configuration);        }
+            ApplicableTimers = GetApplicableTimers(configuration);
+            ApplicableSkills = GetApplicableSkills();
 
-        public void OnFrameworkUpdate(Configuration configuration)
+            ManageTimers();        
+        }
+
+        public void OnFrameworkUpdate()
         {
             if (ClientState.LocalPlayer != null)
             {
                 CurrentStatuses = StatusesBuilder.GetCurrentStatuses(ClientState.LocalPlayer, TargetManager);
-                ManageTimers(configuration);
+                ManageTimers();
             }
         }
 
@@ -47,25 +54,43 @@ namespace HotbarTimers
             {
                 skill.Hide();
             }
+
+            ApplicableTimers = GetApplicableTimers(configuration);
+            ApplicableSkills = GetApplicableSkills();
         }
 
-        public void ManageTimers(Configuration configuration)
+        private List<TimerConfig> GetApplicableTimers(Configuration configuration)
         {
             string? job = ClientState.LocalPlayer?.ClassJob?.GameData?.Abbreviation?.RawString;
-            if (job == null) return;
-            List<TimerConfig> applicableTimers = configuration.TimerConfigs
-                .Where(timer => timer.Enabled && timer.Job == job).ToList();
+            if (job == null) return new();
+            return configuration.TimerConfigs.Where(timer => timer.Enabled && timer.Job == job).ToList();
+        }
 
-            Dictionary<ActionBarSkill, Status?> skillsToChange = new();
-            foreach (TimerConfig timerConfig in applicableTimers)
+        private List<ActionBarSkill> GetApplicableSkills()
+        {
+            List<ActionBarSkill> skills = new();
+            foreach (TimerConfig timerConfig in ApplicableTimers)
             {
-                List<ActionBarSkill> skills = ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill);
+                skills.AddRange(ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill));
+            }
+            return skills;
+        }
+
+        public void ManageTimers()
+        {
+            uint? playerId = ClientState.LocalPlayer?.ObjectId;
+            if (playerId == null) return;
+            Dictionary<ActionBarSkill, Status?> skillsToChange = new();
+            
+            foreach (TimerConfig timerConfig in ApplicableTimers)
+            {
                 Status? currentStatus = CurrentStatuses.Find(
                     status => status.GameData.Name == timerConfig.Status &&
-                    (!timerConfig.SelfOnly || status.SourceID == ClientState.LocalPlayer!.ObjectId)
+                    (!timerConfig.SelfOnly || status.SourceID == playerId)
                 );
+                List<ActionBarSkill> currentSkills = ApplicableSkills.FindAll(s => s.Name == timerConfig.Skill);
                 
-                foreach (ActionBarSkill skill in skills)
+                foreach (ActionBarSkill skill in currentSkills)
                 {
                     if (!skillsToChange.ContainsKey(skill)) skillsToChange.Add(skill, currentStatus);
                     else
@@ -73,15 +98,15 @@ namespace HotbarTimers
                         if (skillsToChange[skill] == null) skillsToChange[skill] = currentStatus;
                     }
                 }
+            }
 
-                foreach(KeyValuePair<ActionBarSkill, Status?> skillToChange in skillsToChange)
-                {
-                    ActionBarSkill skill = skillToChange.Key;
-                    Status? status = skillToChange.Value;
+            foreach (KeyValuePair<ActionBarSkill, Status?> skillToChange in skillsToChange)
+            {
+                ActionBarSkill skill = skillToChange.Key;
+                Status? status = skillToChange.Value;
 
-                    if (status != null) skill.Show(status.RemainingTime, status.StackCount);
-                    else skill.Hide();
-                }
+                if (status != null) skill.Show(status.RemainingTime, status.StackCount);
+                else skill.Hide();
             }
         }
 
