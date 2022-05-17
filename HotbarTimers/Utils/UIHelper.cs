@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using System;
 
 namespace HotbarTimers
 {
@@ -45,14 +46,48 @@ namespace HotbarTimers
             prev->NextSiblingNode = next;
         }
 
-        public static void Dispose(AtkImageNode* imageNode)
+        public static void Destroy(AtkTextNode* textNode)
         {
-            imageNode->UnloadTexture();
-            Dispose((AtkResNode*)imageNode);
+            if (textNode != null)
+            {
+                textNode->AtkResNode.Destroy(true);
+                textNode = null;
+            }
         }
-        public static void Dispose(AtkResNode* node)
+
+        public static void Destroy(AtkImageNode* imageNode)
         {
-            node->Destroy(true);
+            if (imageNode != null)
+            {
+                imageNode->AtkResNode.Destroy(true);
+                imageNode = null;
+            }
+        }
+
+        public static void Unlink(AtkTextNode* textNode)
+        {
+            if (textNode != null)
+            {
+                if (textNode->AtkResNode.NextSiblingNode != null)
+                {
+                    textNode->AtkResNode.NextSiblingNode->PrevSiblingNode = null;
+                }
+                textNode->AtkResNode.PrevSiblingNode = null;
+                textNode->AtkResNode.NextSiblingNode = null;
+            }
+        }
+
+        public static void Unlink(AtkImageNode* imageNode)
+        {
+            if (imageNode != null)
+            {
+                if (imageNode->AtkResNode.NextSiblingNode != null)
+                {
+                    imageNode->AtkResNode.NextSiblingNode->PrevSiblingNode = null;
+                }
+                imageNode->AtkResNode.PrevSiblingNode = null;
+                imageNode->AtkResNode.NextSiblingNode = null;
+            }
         }
     }
 }

@@ -1,26 +1,17 @@
-﻿using Dalamud.Data;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using ImGuiNET;
-using Lumina.Excel;
+﻿using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace HotbarTimers
 {
     class ConfigurationUI : IDisposable
     {
         private readonly Configuration Configuration;
-        private ExcelSheet<ClassJob>? GameJobsList { get; init; }
-        private ExcelSheet<Action>? GameActionsList { get; init; }
-        private ExcelSheet<Status>? GameStatusList { get; init; }
-        private ClientState ClientState { get; init; }
-
+        
         private int? SelectedJobIndex;
 
         private Action<Configuration> OnConfigSave { get; init; }
@@ -32,14 +23,9 @@ namespace HotbarTimers
             set { this.settingsVisible = value; }
         }
 
-        public ConfigurationUI(Configuration configuration, DataManager dataManager, 
-            ClientState clientState, Action<Configuration> onConfigSave)
+        public ConfigurationUI(Configuration configuration, Action<Configuration> onConfigSave)
         {
-            this.Configuration = configuration;
-            GameJobsList = dataManager.GetExcelSheet<ClassJob>();
-            GameActionsList = dataManager.GetExcelSheet<Action>();
-            GameStatusList = dataManager.GetExcelSheet<Status>();
-            ClientState = clientState;
+            Configuration = configuration;
             OnConfigSave = onConfigSave;
         }
 
@@ -48,7 +34,7 @@ namespace HotbarTimers
 
         public void DrawSettingsWindow()
         {
-            if (!SettingsVisible || GameJobsList == null || ClientState.LocalPlayer?.ClassJob?.GameData == null)
+            if (!SettingsVisible || HotbarTimers.GameJobsList == null || HotbarTimers.Player?.ClassJob?.GameData == null)
             {
                 return;
             }
@@ -61,12 +47,12 @@ namespace HotbarTimers
                 {
                     if (ImGui.BeginTabItem("Job timers"))
                     {
-                        string[] jobs = GameJobsList
+                        string[] jobs = HotbarTimers.GameJobsList
                             .Where(job => job.ItemSoulCrystal.Row != 0 && !job.IsLimitedJob && job.DohDolJobIndex == -1)
                             .OrderBy(job => job.Abbreviation.RawString)
                             .Select(job => job.Abbreviation.RawString).ToArray();
 
-                        string currentJob = ClientState.LocalPlayer.ClassJob.GameData.Abbreviation.RawString;
+                        string currentJob = HotbarTimers.Player.ClassJob.GameData.Abbreviation.RawString;
                         int currentJobIndex = Math.Max(0, Array.FindIndex(jobs, job => job == currentJob));
 
                         int selectedJobIndex = SelectedJobIndex ?? currentJobIndex;
@@ -103,11 +89,10 @@ namespace HotbarTimers
                         ImGui.PopStyleColor();
 
                         var tableFlags = ImGuiTableFlags.Borders;
-                        if (ImGui.BeginTable("ConfigTable", 5, tableFlags))
+                        if (ImGui.BeginTable("ConfigTable", 4, tableFlags))
                         {
                             ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.WidthStretch);
                             ImGui.TableSetupColumn("Skill name", ImGuiTableColumnFlags.WidthStretch);
-                            ImGui.TableSetupColumn("Only applied by YOU", ImGuiTableColumnFlags.WidthFixed);
                             ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed);
                             ImGui.TableSetupColumn("Delete", ImGuiTableColumnFlags.WidthFixed);
                             ImGui.TableHeadersRow();
@@ -121,7 +106,6 @@ namespace HotbarTimers
                                 string status = timerConfig.Status;
                                 string skill = timerConfig.Skill;
                                 bool enabled = timerConfig.Enabled;
-                                bool selfOnly = timerConfig.SelfOnly;
                                 ImGui.TableNextRow();
 
                                 //Status
@@ -142,15 +126,6 @@ namespace HotbarTimers
                                     timerConfig.Skill = skill.Trim();
                                     SaveConfig();
                                 }
-
-                                //Self applied
-                                ImGui.TableSetColumnIndex(columnIndex++);
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetColumnWidth() / 2f) - ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.X + 1);
-                                if (ImGui.Checkbox($"###{row}selfOnly", ref selfOnly))
-                                {
-                                    timerConfig.SelfOnly = selfOnly;
-                                    SaveConfig();
-                                };
 
                                 //Enabled
                                 ImGui.TableSetColumnIndex(columnIndex++);
@@ -177,7 +152,7 @@ namespace HotbarTimers
 
                         if (ImGui.Button("Add new row"))
                         {
-                            var config = new TimerConfig(jobs[selectedJobIndex], "", "", true, true);
+                            var config = new TimerConfig(jobs[selectedJobIndex], "", "", true);
                             Configuration.TimerConfigs.Add(config);
                         }
 
@@ -249,14 +224,15 @@ namespace HotbarTimers
         {
             Configuration.TimerConfigs.RemoveAll(timer => String.IsNullOrEmpty(timer.Skill) && String.IsNullOrEmpty(timer.Status));
             Configuration.Save();
+            HotbarTimers.Configuration = Configuration;
             OnConfigSave(Configuration);
         }
 
-        private List<TimerConfig> GetSameNameConfigs(string currentJob)
+        private static List<TimerConfig> GetSameNameConfigs(string currentJob)
         {
-            if (GameJobsList == null || GameStatusList == null) return new();
+            if (HotbarTimers.GameJobsList == null || HotbarTimers.GameStatusList == null) return new();
 
-            string? parentJob = GameJobsList
+            string? parentJob = HotbarTimers.GameJobsList
                 .First(job => job.Abbreviation.RawString == currentJob)
                 .ClassJobParent.Value?.Abbreviation.RawString;
 
@@ -265,31 +241,31 @@ namespace HotbarTimers
             if (parentJob != null) actions.AddRange(GetJobActions(parentJob));
             actions.AddRange(GetRoleActions(currentJob));
             
-            List<string> statuses = GameStatusList
+            List<string> statuses = HotbarTimers.GameStatusList
                 .Where(status => actions.Contains(status.Name.RawString))
                 .Select(status => status.Name.RawString)
                 .Distinct().ToList();
 
-            return statuses.Select(status => new TimerConfig(currentJob, status, status, true, true))
+            return statuses.Select(status => new TimerConfig(currentJob, status, status, true))
                 .OrderBy(config => config.Status).ToList();
         }
 
-        private List<string> GetJobActions(string job)
+        private static List<string> GetJobActions(string job)
         {
-            if (GameActionsList == null) return new();
+            if (HotbarTimers.GameActionsList == null) return new();
 
-            return GameActionsList
+            return HotbarTimers.GameActionsList
                 .Where(action => action.ClassJob.Value?.Abbreviation.RawString == job)
                 .Select(action => action.Name.RawString).ToList();
         }
 
-        private List<string> GetRoleActions(string job)
+        private static List<string> GetRoleActions(string job)
         {
-            if (GameActionsList == null) return new();
+            if (HotbarTimers.GameActionsList == null) return new();
 
             //access job abbreviation property by string
             PropertyInfo? prop = typeof(ClassJobCategory).GetProperty(job);
-            return GameActionsList.Where(
+            return HotbarTimers.GameActionsList.Where(
                 action => action.IsRoleAction && 
                 (bool?)prop?.GetValue(action.ClassJobCategory.Value) == true
             )

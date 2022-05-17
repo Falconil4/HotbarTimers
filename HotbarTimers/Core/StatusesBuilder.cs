@@ -1,20 +1,24 @@
-﻿using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
+﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Statuses;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HotbarTimers
 {
     class StatusesBuilder
     {
-        public static List<Status> GetCurrentStatuses(PlayerCharacter player, TargetManager targetManager)
+        public static List<Status> GetCurrentStatuses()
         {
             List<Status> statuses = new();
-            if (player.StatusList != null) statuses.AddRange(player.StatusList);
+            var player = HotbarTimers.Player;
+            if (player == null) return statuses;
+            var playerId = player.ObjectId;
 
-            var target = targetManager.Target;
-            if (target is BattleChara targetCharacter) statuses.AddRange(targetCharacter.StatusList);
+            statuses.AddRange(player.StatusList.Where(status => status.SourceID == playerId));
+
+            var target = HotbarTimers.TargetManager!.Target;
+            if (target is BattleChara targetCharacter) statuses.AddRange(targetCharacter.StatusList.Where(status => status.SourceID == playerId));
 
             return statuses;
         }

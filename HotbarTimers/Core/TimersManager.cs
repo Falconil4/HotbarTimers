@@ -1,10 +1,6 @@
-﻿using Dalamud.Data;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
@@ -12,82 +8,77 @@ namespace HotbarTimers
 {
     class TimersManager
     {
-        private ClientState ClientState { get; init; }
-        private TargetManager TargetManager { get; init; }
-        private ExcelSheet<Action>? GameActionsList { get; init; }
         private List<ActionBarSkill> ActionBarSkills = new();
-        private List<Status> CurrentStatuses = new();
-
+        
         private List<TimerConfig> ApplicableTimers = new();
         private List<ActionBarSkill> ApplicableSkills = new();
+        private List<Status> ApplicableStatuses = new();
 
-        public TimersManager(ClientState clientState, TargetManager targetManager, DataManager dataManager)
+        public void OnActionBarUpdate()
         {
-            ClientState = clientState;
-            TargetManager = targetManager;
-            
-            GameActionsList = dataManager.GetExcelSheet<Action>();
-        }
+            ActionBarSkills.ForEach(skill => skill.Dispose());
+            ActionBarSkills = ActionBarSkillBuilder.Build();
 
-        public void OnActionBarUpdate(Configuration configuration, bool rebuild = false)
-        {
-            ActionBarSkills = ActionBarSkillBuilder.Build(GameActionsList, configuration, rebuild);
-            ApplicableTimers = GetApplicableTimers(configuration);
+            ApplicableTimers = GetApplicableTimers();
             ApplicableSkills = GetApplicableSkills();
-
             ManageTimers();        
         }
 
+        private DateTime LastFrameworkUpdate = DateTime.Now;
         public void OnFrameworkUpdate()
         {
-            if (ClientState.LocalPlayer != null)
+            if (HotbarTimers.Player != null)
             {
-                CurrentStatuses = StatusesBuilder.GetCurrentStatuses(ClientState.LocalPlayer, TargetManager);
+                TimeSpan timeSinceLastUpdate = DateTime.Now - LastFrameworkUpdate;
+                if (timeSinceLastUpdate.TotalMilliseconds < 100) return;
+                LastFrameworkUpdate = DateTime.Now;
+
+                ApplicableStatuses = GetApplicableStatuses();
                 ManageTimers();
             }
         }
 
-        public void OnConfigSave(Configuration configuration)
+        public void OnConfigSave()
         {
-            OnActionBarUpdate(configuration, true);
-            foreach (ActionBarSkill skill in ActionBarSkills)
-            {
-                skill.Hide();
-            }
-
-            ApplicableTimers = GetApplicableTimers(configuration);
-            ApplicableSkills = GetApplicableSkills();
+            OnActionBarUpdate();
+            ActionBarSkills.ForEach(skill => skill.Hide());
+            ManageTimers();
         }
 
-        private List<TimerConfig> GetApplicableTimers(Configuration configuration)
+        static List<TimerConfig> GetApplicableTimers()
         {
-            string? job = ClientState.LocalPlayer?.ClassJob?.GameData?.Abbreviation?.RawString;
+            string? job = HotbarTimers.Player?.ClassJob?.GameData?.Abbreviation?.RawString;
             if (job == null) return new();
-            return configuration.TimerConfigs.Where(timer => timer.Enabled && timer.Job == job).ToList();
+            return HotbarTimers.Configuration!.TimerConfigs.Where(timer => timer.Enabled && timer.Job == job).ToList();
         }
 
-        private List<ActionBarSkill> GetApplicableSkills()
+        List<ActionBarSkill> GetApplicableSkills()
         {
-            List<ActionBarSkill> skills = new();
+            List<ActionBarSkill> applicableSkills = new();
             foreach (TimerConfig timerConfig in ApplicableTimers)
             {
-                skills.AddRange(ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill));
+                applicableSkills.AddRange(ActionBarSkills.FindAll(x => x.Name == timerConfig.Skill));
             }
-            return skills;
+            return applicableSkills;
+        }
+
+        private List<Status> GetApplicableStatuses()
+        {
+            List<Status> currentStatuses = StatusesBuilder.GetCurrentStatuses();
+
+            return currentStatuses.Where(status => ApplicableTimers
+                    .Any(timer => timer.Status == status.GameData.Name))
+                .ToList();
         }
 
         public void ManageTimers()
         {
-            uint? playerId = ClientState.LocalPlayer?.ObjectId;
-            if (playerId == null) return;
+            if (HotbarTimers.Player == null) return;
             Dictionary<ActionBarSkill, Status?> skillsToChange = new();
             
             foreach (TimerConfig timerConfig in ApplicableTimers)
             {
-                Status? currentStatus = CurrentStatuses.Find(
-                    status => status.GameData.Name == timerConfig.Status &&
-                    (!timerConfig.SelfOnly || status.SourceID == playerId)
-                );
+                Status? currentStatus = ApplicableStatuses.Find(status => status.GameData.Name == timerConfig.Status);
                 List<ActionBarSkill> currentSkills = ApplicableSkills.FindAll(s => s.Name == timerConfig.Skill);
                 
                 foreach (ActionBarSkill skill in currentSkills)
@@ -112,7 +103,7 @@ namespace HotbarTimers
 
         public void Dispose()
         {
-            foreach(ActionBarSkill skill in ActionBarSkills)
+            foreach(ActionBarSkill skill in ApplicableSkills)
             {
                 skill.Dispose();
             }

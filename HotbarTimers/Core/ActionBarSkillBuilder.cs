@@ -1,23 +1,16 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
-using Lumina.Excel;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace HotbarTimers
 {
     public unsafe class ActionBarSkillBuilder
     {
-        private static List<ActionBarSkill> CachedActionBarSkills = new();
-
-        public static List<ActionBarSkill> Build(ExcelSheet<Action>? gameActionsList, Configuration configuration, bool rebuild = false)
+        public static List<ActionBarSkill> Build()
         {
             List<ActionBarSkill> actionBarSkills = new();
-            if (gameActionsList == null) return actionBarSkills;
 
             var actionManager = ActionManager.Instance();
-
             for (int actionBarIndex = 0; actionBarIndex < ActionBars.Names.Length; actionBarIndex++)
             {
                 var actionBar = ActionBars.GetActionBar(actionBarIndex)->ActionBarSlotsAction;
@@ -27,37 +20,28 @@ namespace HotbarTimers
                 {
                     var actionBarSlot = &actionBar[slotIndex];
                     var actionId = actionManager->GetAdjustedActionId((uint)actionBarSlot->ActionId);
-                    var name = gameActionsList.GetRow(actionId)?.Name?.RawString;
+                    var row = HotbarTimers.GameActionsList?.GetRow(actionId);
+                    var name = row?.Name?.RawString;
 
-                    ActionBarSkill? cachedActionBarSkill = CachedActionBarSkills.Find(s =>
-                        s.ActionBarIndex == actionBarIndex
-                        && s.SlotIndex == slotIndex
-                        && s.Name == name
-                    );
-
-                    if (IsSlotEmpty(actionBarSlot, name))
-                    {
-                        if (cachedActionBarSkill != null) CachedActionBarSkills.Remove(cachedActionBarSkill);
-                        continue;
-                    }
-
-                    if (cachedActionBarSkill == null || rebuild)
+                    if (!IsSlotEmpty(actionBarSlot, row))
                     {
                         var iconComponent = actionBarSlot->Icon;
-                        cachedActionBarSkill = new ActionBarSkill(actionBarSlot, iconComponent, name!, actionBarIndex, slotIndex, configuration);
-                    }
+                        ActionBarSkill skill = new(actionBarSlot, iconComponent, name!, actionBarIndex, slotIndex);
 
-                    actionBarSkills.Add(cachedActionBarSkill);
+                        actionBarSkills.Add(skill);
+                    }
                 }
             }
 
-            CachedActionBarSkills = actionBarSkills;
             return actionBarSkills;
         }
-        
-        private static bool IsSlotEmpty(ActionBarSlot* actionBarSlot, string? name)
+
+        private static bool IsSlotEmpty(ActionBarSlot* actionBarSlot, Lumina.Excel.GeneratedSheets.Action? row)
         {
-            return actionBarSlot->ActionId <= 0 || actionBarSlot->PopUpHelpTextPtr == null || name == null;
+            var name = row?.Name;
+            var jobRow = row?.ClassJobCategory.Row;
+
+            return actionBarSlot->ActionId <= 0 || actionBarSlot->PopUpHelpTextPtr == null || name == null || jobRow == 0;
         }
     }
 }

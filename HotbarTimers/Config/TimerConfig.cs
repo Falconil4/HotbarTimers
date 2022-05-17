@@ -9,15 +9,13 @@ namespace HotbarTimers
         public string Status { get; set; }
         public string Skill { get; set; }
         public bool Enabled { get; set; } = true;
-        public bool SelfOnly { get; set; } = true;
 
-        public TimerConfig(string job, string buff, string skill, bool enabled, bool selfOnly)
+        public TimerConfig(string job, string buff, string skill, bool enabled)
         {
             Status = buff;
             Skill = skill;
             Enabled = enabled;
             Job = job;
-            SelfOnly = selfOnly;
         }
 
         public override bool Equals(object? obj)

@@ -1,7 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
-using System.Numerics;
+using System.Diagnostics;
 
 namespace HotbarTimers
 {
@@ -18,12 +18,13 @@ namespace HotbarTimers
         private AtkTextNode* DurationText;
         private AtkTextNode* StackText;
         private AtkTextNode* OriginalCdText;
-        
+        private AtkResNode* OriginalOverlay;
+
         private bool Visible = false;        
         private static uint NodeIdx = 200;
 
         public ActionBarSkill(ActionBarSlot* actionBarSlot, AtkComponentNode* iconComponent, 
-            string name, int actionBarIndex, int slotIndex, Configuration configuration)
+            string name, int actionBarIndex, int slotIndex)
         {
             ActionBarSlot = actionBarSlot;
             IconComponent = iconComponent;
@@ -31,20 +32,20 @@ namespace HotbarTimers
             ActionBarIndex = actionBarIndex;
             SlotIndex = slotIndex;
 
-            Initialize(configuration);
+            Initialize();
         }
 
-        private void Initialize(Configuration configuration)
+        private void Initialize()
         {
             NodeList = IconComponent->Component->UldManager.NodeList;
             OriginalCdText = (AtkTextNode*)NodeList[13];
+            OriginalOverlay = NodeList[1];
 
             Combo = CreateComboNode();
-            DurationText = CreateTextNode(0, 0, AlignmentType.Center, configuration.StatusTimerTextConfig);
-            StackText = CreateTextNode(-3, 5, AlignmentType.TopRight, configuration.StackCountTextConfig);
+            DurationText = CreateTextNode(0, 0, AlignmentType.Center, HotbarTimers.Configuration!.StatusTimerTextConfig);
+            StackText = CreateTextNode(-3, 5, AlignmentType.TopRight, HotbarTimers.Configuration!.StackCountTextConfig);
 
-            var originalOverlay = NodeList[1];
-            UIHelper.Link(originalOverlay, (AtkResNode*)Combo);
+            UIHelper.Link(OriginalOverlay, (AtkResNode*)Combo);
             UIHelper.Link((AtkResNode*)Combo, (AtkResNode*)DurationText);
             UIHelper.Link((AtkResNode*)DurationText, (AtkResNode*)StackText);
 
@@ -103,24 +104,23 @@ namespace HotbarTimers
 
         public void Show(float remainingTime, int stackCount)
         {
-            if(remainingTime >= 0.0)
+            if (remainingTime < 0.0) remainingTime *= -1;
+
+            string format = "0";
+            if (remainingTime < 3.0) format = "0.0";
+            DurationText->SetText(remainingTime.ToString(format));
+
+            UIHelper.Show(DurationText);
+            UIHelper.Show(Combo);
+            UIHelper.Hide(OriginalCdText);
+
+            if (stackCount > 0)
             {
-                string format = "0";
-                if (remainingTime < 3.0) format = "0.0";
-                DurationText->SetText(remainingTime.ToString(format));
-
-                UIHelper.Show(DurationText);
-                UIHelper.Show(Combo);
-                UIHelper.Hide(OriginalCdText);
-
-                if (stackCount > 0)
-                {
-                    StackText->SetText(stackCount.ToString());
-                    UIHelper.Show(StackText);
-                }
-
-                Visible = true;
+                StackText->SetText(stackCount.ToString());
+                UIHelper.Show(StackText);
             }
+
+            Visible = true;
         }
 
         public void Hide(bool force = false)
@@ -139,9 +139,19 @@ namespace HotbarTimers
 
         public void Dispose()
         {
-            //UIHelper.Dispose(Combo);
-            //UIHelper.Dispose((AtkResNode*)DurationText);
-            //UIHelper.Dispose((AtkResNode*)StackText);
+            //Debug.Print("disposing");
+            UIHelper.Show(OriginalOverlay);
+            UIHelper.Show(OriginalCdText);
+
+            UIHelper.Unlink(StackText);
+            UIHelper.Unlink(DurationText);
+            UIHelper.Unlink(Combo);
+            
+            IconComponent->Component->UldManager.UpdateDrawNodeList();
+
+            UIHelper.Destroy(Combo);
+            UIHelper.Destroy(DurationText);
+            UIHelper.Destroy(StackText);
         }
     }
 }
