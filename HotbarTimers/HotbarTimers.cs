@@ -6,11 +6,11 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Hooking;
 using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
-using System.Diagnostics;
 
 namespace HotbarTimers
 {
@@ -20,7 +20,7 @@ namespace HotbarTimers
         private const string commandName = "/hotbartimers";
 
         private ConfigurationUI ConfigurationUi { get; init; }
-        private TimersManager TimersManager { get; init; }
+        private TimersManager TimersManager { get; set; }
 
         public static DalamudPluginInterface? PluginInterface { get; private set; }
         public static CommandManager? CommandManager { get; private set; }
@@ -31,12 +31,18 @@ namespace HotbarTimers
         public static ExcelSheet<Action>? GameActionsList { get; private set; }
         public static ExcelSheet<Status>? GameStatusList { get; private set; }
         public static Configuration? Configuration { get; set; }
-        public static PlayerCharacter? Player { get; private set; }
-
+        public static PlayerCharacter? Player
+        {
+            get
+            {
+                if (ClientState?.IsLoggedIn == true) return ClientState.LocalPlayer;
+                return null;
+            }
+        }
 
         private delegate byte ActionBarUpdate(AddonActionBarBase* atkUnitBase, NumberArrayData** numberArrayData, StringArrayData** stringArrayData);
         private readonly string Signature = "E8 ?? ?? ?? ?? 83 BB ?? ?? ?? ?? ?? 75 09";
-        private readonly Hook<ActionBarUpdate> ActionBarHook;
+        private Hook<ActionBarUpdate> ActionBarHook { get; set; }
 
         public HotbarTimers(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -55,8 +61,11 @@ namespace HotbarTimers
             GameActionsList = dataManager.GetExcelSheet<Action>();
             GameStatusList = dataManager.GetExcelSheet<Status>();
 
-            if (FFXIVClientStructs.Resolver.Initialized == false) FFXIVClientStructs.Resolver.Initialize();
-
+            if (FFXIVClientStructs.Resolver.Initialized == false)
+            {
+                FFXIVClientStructs.Resolver.Initialize();
+            }
+            
             Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Configuration.Initialize(PluginInterface);
             ConfigurationUi = new ConfigurationUI(Configuration, OnConfigSave);
@@ -68,26 +77,66 @@ namespace HotbarTimers
             PluginInterface.UiBuilder.Draw += this.ConfigurationUi.Draw;
             PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
 
-            Framework.Update += OnFrameworkUpdate;
+            ClientState.Login += OnLogin;
+            ClientState.Logout += OnLogout;
 
             var scanner = new SigScanner(true);
             var address = scanner.ScanText(Signature);
-            ActionBarHook = new Hook<ActionBarUpdate>(address, ActionBarUpdateDetour);
-            ActionBarHook.Enable();
+            ActionBarHook = Hook<ActionBarUpdate>.FromAddress(address, ActionBarUpdateDetour);
 
             TimersManager = new TimersManager();
+
+            if (ClientState.IsLoggedIn)
+            {
+                OnLogin();
+            }
+        }
+
+        private void OnLogin(object? sender, System.EventArgs e) => OnLogin();
+
+        private void OnLogin()
+        {
+            PluginLog.LogInformation("OnLogin start");
+            if (Framework != null)
+            {
+                Framework.Update += OnFrameworkUpdate;
+            }
+
+            ActionBarHook.Enable();
+            TimersManager = new TimersManager();
+
+            PluginLog.LogInformation("OnLogin end");
+        }
+
+        private void OnLogout(object? sender, System.EventArgs e) => OnLogout();
+
+        private void OnLogout()
+        {
+            PluginLog.LogInformation("OnLogout start");
+            if (Framework != null)
+            {
+                Framework.Update -= OnFrameworkUpdate;
+            }
+
+            ActionBarHook.Disable();
+            TimersManager.Dispose();
+            PluginLog.LogInformation("OnLogout end");
         }
 
         private void OnFrameworkUpdate(Framework framework)
         {
-            if (Player == null) Player = ClientState?.LocalPlayer;
-            TimersManager?.OnFrameworkUpdate();
+            if (Player != null)
+            {
+                TimersManager?.OnFrameworkUpdate();
+            }
         }
 
         private byte ActionBarUpdateDetour(AddonActionBarBase* atkUnitBase, NumberArrayData** numberArrayData, StringArrayData** stringArrayData)
         {
-            //Debug.Print("ActionBarUpdate event");
-            TimersManager.OnActionBarUpdate();
+            if (Player != null)
+            {
+                TimersManager.OnActionBarUpdate();
+            }
             return ActionBarHook.Original(atkUnitBase, numberArrayData, stringArrayData);
         }
 
@@ -101,14 +150,17 @@ namespace HotbarTimers
 
         public void Dispose()
         {
-            Framework!.Update -= OnFrameworkUpdate;
             ConfigurationUi.Dispose();
             CommandManager?.RemoveHandler(commandName);
 
-            ActionBarHook.Disable();
-            ActionBarHook.Dispose();
+            if (ClientState != null)
+            {
+                ClientState.Login -= OnLogin;
+                ClientState.Logout -= OnLogout;
+            }
 
-            TimersManager.Dispose();
+            OnLogout();
+            ActionBarHook.Dispose();
         }
     }
 }

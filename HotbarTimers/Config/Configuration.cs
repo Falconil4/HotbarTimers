@@ -24,7 +24,8 @@ namespace HotbarTimers
 
         public void Save()
         {
-            this.pluginInterface!.SavePluginConfig(this);
+            if (this.pluginInterface == null) return;
+            this.pluginInterface.SavePluginConfig(this);
         }
     }
 

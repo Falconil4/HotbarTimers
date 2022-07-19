@@ -48,8 +48,8 @@ namespace HotbarTimers
         static List<TimerConfig> GetApplicableTimers()
         {
             string? job = HotbarTimers.Player?.ClassJob?.GameData?.Abbreviation?.RawString;
-            if (job == null) return new();
-            return HotbarTimers.Configuration!.TimerConfigs.Where(timer => timer.Enabled && timer.Job == job).ToList();
+            if (job == null || HotbarTimers.Configuration == null) return new();
+            return HotbarTimers.Configuration.TimerConfigs.Where(timer => timer.Enabled && timer.Job == job).ToList();
         }
 
         List<ActionBarSkill> GetApplicableSkills()

@@ -22,11 +22,11 @@ namespace HotbarTimers
                     var actionId = actionManager->GetAdjustedActionId((uint)actionBarSlot->ActionId);
                     var row = HotbarTimers.GameActionsList?.GetRow(actionId);
                     var name = row?.Name?.RawString;
-
-                    if (!IsSlotEmpty(actionBarSlot, row))
+                    
+                    if (!IsSlotEmpty(actionBarSlot, row) && name != null)
                     {
                         var iconComponent = actionBarSlot->Icon;
-                        ActionBarSkill skill = new(actionBarSlot, iconComponent, name!, actionBarIndex, slotIndex);
+                        ActionBarSkill skill = new(actionBarSlot, iconComponent, name, actionBarIndex, slotIndex);
 
                         actionBarSkills.Add(skill);
                     }

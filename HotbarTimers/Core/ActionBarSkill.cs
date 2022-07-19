@@ -37,13 +37,15 @@ namespace HotbarTimers
 
         private void Initialize()
         {
+            if (HotbarTimers.Configuration == null) return;
+
             NodeList = IconComponent->Component->UldManager.NodeList;
             OriginalCdText = (AtkTextNode*)NodeList[13];
             OriginalOverlay = NodeList[1];
 
             Combo = CreateComboNode();
-            DurationText = CreateTextNode(0, 0, AlignmentType.Center, HotbarTimers.Configuration!.StatusTimerTextConfig);
-            StackText = CreateTextNode(-3, 5, AlignmentType.TopRight, HotbarTimers.Configuration!.StackCountTextConfig);
+            DurationText = CreateTextNode(0, 0, AlignmentType.Center, HotbarTimers.Configuration.StatusTimerTextConfig);
+            StackText = CreateTextNode(-3, 5, AlignmentType.TopRight, HotbarTimers.Configuration.StackCountTextConfig);
 
             UIHelper.Link(OriginalOverlay, (AtkResNode*)Combo);
             UIHelper.Link((AtkResNode*)Combo, (AtkResNode*)DurationText);
@@ -114,7 +116,7 @@ namespace HotbarTimers
             UIHelper.Show(Combo);
             UIHelper.Hide(OriginalCdText);
 
-            if (stackCount > 0)
+            if (stackCount > 0 && stackCount < 100)
             {
                 StackText->SetText(stackCount.ToString());
                 UIHelper.Show(StackText);
@@ -131,6 +133,10 @@ namespace HotbarTimers
                 UIHelper.Hide(Combo);
                 UIHelper.Hide(DurationText);
                 UIHelper.Hide(StackText);
+
+                DurationText->SetText("");
+                StackText->SetText("");
+                
                 Visible = false;
             }
         }
@@ -139,7 +145,6 @@ namespace HotbarTimers
 
         public void Dispose()
         {
-            //Debug.Print("disposing");
             UIHelper.Show(OriginalOverlay);
             UIHelper.Show(OriginalCdText);
 
@@ -152,6 +157,10 @@ namespace HotbarTimers
             UIHelper.Destroy(Combo);
             UIHelper.Destroy(DurationText);
             UIHelper.Destroy(StackText);
+
+            GC.SuppressFinalize(this);
         }
+
+        ~ActionBarSkill() => Dispose();
     }
 }

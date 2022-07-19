@@ -39,7 +39,6 @@ namespace HotbarTimers
                 return;
             }
 
-            ImGui.SetNextWindowSize(new Vector2(600, 600), ImGuiCond.Appearing);
             if (ImGui.Begin("Hotbar Timers Settings", ref this.settingsVisible,
                 ImGuiWindowFlags.NoCollapse))
             {
