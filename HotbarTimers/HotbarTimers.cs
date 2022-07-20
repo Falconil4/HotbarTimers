@@ -7,6 +7,7 @@ using Dalamud.Game.Command;
 using Dalamud.Hooking;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;

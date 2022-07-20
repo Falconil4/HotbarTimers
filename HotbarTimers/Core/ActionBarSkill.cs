@@ -1,19 +1,16 @@
-﻿using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.Graphics;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System;
-using System.Diagnostics;
 
 namespace HotbarTimers
 {
     public unsafe class ActionBarSkill
     {
-        public ActionBarSlot* ActionBarSlot { get; init; }
-        public AtkComponentNode* IconComponent { get; init; }
         public string Name { get; init; }
-        public int ActionBarIndex { get; init; }
-        public int SlotIndex { get; init; }
+        public bool Visible { get; set; } = false;
+        private int ActionBarIndex { get; init; }
+        private int SlotIndex { get; init; }
 
+        private AtkComponentNode* IconComponent { get; init; }
         private AtkResNode** NodeList;
         private AtkImageNode* Combo;
         private AtkTextNode* DurationText;
@@ -21,27 +18,24 @@ namespace HotbarTimers
         private AtkTextNode* OriginalCdText;
         private AtkResNode* OriginalOverlay;
 
-        public bool Visible = false;
         private bool Initialized = false;
         private static uint NodeIdx = 4271;
 
-        public ActionBarSkill(ActionBarSlot* actionBarSlot, AtkComponentNode* iconComponent, 
-            string name, int actionBarIndex, int slotIndex)
+        public ActionBarSkill(AtkComponentNode* iconComponent, string name, int actionBarIndex, int slotIndex)
         {
-            ActionBarSlot = actionBarSlot;
             IconComponent = iconComponent;
             Name = name;
             ActionBarIndex = actionBarIndex;
             SlotIndex = slotIndex;
+
+            NodeList = IconComponent->Component->UldManager.NodeList;
+            OriginalCdText = (AtkTextNode*)NodeList[13];
+            OriginalOverlay = NodeList[1];
         }
 
         private void Initialize()
         {
             if (HotbarTimers.Configuration == null) return;
-
-            NodeList = IconComponent->Component->UldManager.NodeList;
-            OriginalCdText = (AtkTextNode*)NodeList[13];
-            OriginalOverlay = NodeList[1];
 
             Combo = CreateComboNode();
             DurationText = CreateTextNode(0, 0, AlignmentType.Center, HotbarTimers.Configuration.StatusTimerTextConfig);
@@ -122,7 +116,7 @@ namespace HotbarTimers
             UIHelper.Hide(OriginalOverlay);
             UIHelper.Hide(OriginalCdText);
 
-            if (stackCount > 0 && stackCount < 100)
+            if (stackCount > 0 && stackCount < 10)
             {
                 StackText->SetText(stackCount.ToString());
                 UIHelper.Show(StackText);
@@ -145,8 +139,6 @@ namespace HotbarTimers
             
             Visible = false;
         }
-
-        public override string ToString() => $"{Name}; Action Bar: {ActionBarIndex}; Slot: {SlotIndex}";
 
         public void Dispose()
         {
@@ -177,5 +169,6 @@ namespace HotbarTimers
         }
 
         public override int GetHashCode() => base.GetHashCode();
+        public override string ToString() => $"{Name};{ActionBarIndex};{SlotIndex}";
     }
 }

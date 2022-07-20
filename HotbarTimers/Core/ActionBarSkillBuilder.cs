@@ -1,48 +1,67 @@
-﻿using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.Game;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Excel.GeneratedSheets;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
-using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureMacroModule;
 
 namespace HotbarTimers
 {
     public unsafe class ActionBarSkillBuilder
     {
-        private static readonly List<Action>? PlayerActions = HotbarTimers.GameActionsList?.Where(a => a.IsPlayerAction).ToList();
-        private static readonly ActionManager* ActionManagerInstance = ActionManager.Instance();
+        private static readonly string[] ActionBarNames = {
+            "_ActionBar",
+            "_ActionBar01",
+            "_ActionBar02",
+            "_ActionBar03",
+            "_ActionBar04",
+            "_ActionBar05",
+            "_ActionBar06",
+            "_ActionBar07",
+            "_ActionBar08",
+            "_ActionBar09",
+            //"_ActionCross",
+            //"_ActionDoubleCrossL",
+            //"_ActionDoubleCrossR"
+        };
+
+        public static readonly int ActionBarSlotsCount = 12;
+
+        private static HotBar* GetHotBar(int actionBarIndex)
+        {
+            return Framework.Instance()->GetUiModule()->GetRaptureHotbarModule()->HotBar[actionBarIndex];
+        }
+        private static AddonActionBarBase* GetActionBar(int actionBarIndex)
+        {
+            return (AddonActionBarBase*)AtkStage.GetSingleton()->RaptureAtkUnitManager->
+                GetAddonByName(ActionBarNames[actionBarIndex]);
+        }
+
         public static List<ActionBarSkill> Build()
         {
             List<ActionBarSkill> actionBarSkills = new();
+            var actionManager = ActionManager.Instance();
 
-            for (int actionBarIndex = 0; actionBarIndex < ActionBars.Names.Length; actionBarIndex++)
+            for (int actionBarIndex = 0; actionBarIndex < ActionBarNames.Length; actionBarIndex++)
             {
-                var actionBar = ActionBars.GetActionBar(actionBarIndex)->ActionBarSlotsAction;
-                if (actionBar == null) continue;
+                var actionBar = GetActionBar(actionBarIndex)->ActionBarSlots;
+                var hotBar = GetHotBar(actionBarIndex)->Slot;
 
-                for (int slotIndex = 0; slotIndex < ActionBars.SlotsCount; slotIndex++)
+                for (int slotIndex = 0; slotIndex < ActionBarSlotsCount; slotIndex++)
                 {
+                    var hotBarSlot = hotBar[slotIndex];
                     var actionBarSlot = &actionBar[slotIndex];
-                    var actionId = actionBarSlot->ActionId;
-                    var adjustedActionId = ActionManagerInstance->GetAdjustedActionId((uint)actionId);
 
-                    if (!IsSlotEmpty(actionBarSlot))
+                    uint? id = GetActionId(hotBarSlot);
+                    if (id == null) continue;
+
+                    uint actionId = actionManager->GetAdjustedActionId((uint)id);
+                    var name = HotbarTimers.GameActionsList?.GetRow(actionId)?.Name?.RawString;
+
+                    if (name != null)
                     {
-                        if (IsMacro(actionBarSlot))
-                        {
-                            uint? macroActionId = GetMacroActionId(actionId);
-                            if (macroActionId != null) adjustedActionId = (uint)macroActionId;
-                        }
-
-                        var name = HotbarTimers.GameActionsList?.GetRow(adjustedActionId)?.Name?.RawString;
-                        if (name != null)
-                        {
-                            ActionBarSkill skill = new(actionBarSlot, actionBarSlot->Icon, name, actionBarIndex, slotIndex);
-                            actionBarSkills.Add(skill);
-                        }
+                        ActionBarSkill skill = new(actionBarSlot->Icon, name, actionBarIndex, slotIndex);
+                        actionBarSkills.Add(skill);
                     }
                 }
             }
@@ -50,51 +69,23 @@ namespace HotbarTimers
             return actionBarSkills;
         }
 
-        private static bool IsMacro(ActionBarSlot* actionBarSlot)
+        private static uint? GetActionId(HotBarSlot* hotBarSlot)
         {
-            return *(actionBarSlot->PopUpHelpTextPtr) == 0;
-        }
-
-        private static bool IsSlotEmpty(ActionBarSlot* actionBarSlot) => actionBarSlot->PopUpHelpTextPtr == null;
-        
-
-        private static uint? GetMacroActionId(int actionId)
-        {
-            var individual = GetMacroActionIdFromMacroIconName(RaptureMacroModule.Instance->Individual[actionId]);
-            if (individual != null) return individual;
-
-            var shared = GetMacroActionIdFromMacroIconName(RaptureMacroModule.Instance->Shared[actionId]);
-            if (shared != null) return shared;
-
-            return null;
-        }
-
-        private static readonly Regex Regex = new (@"^\/m(?:acro)?icon ""?(.+?)""?$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
-        private static uint? GetMacroActionIdFromMacroIconName(Macro* macro)
-        {
-            if (macro == null) return null;
-
-            List<string> macroLines = new();
-            for(int lineIndex = 0; lineIndex <= 14; lineIndex++)
+            //sprint has id of 4 while in actions sheet it's a 3 - replace :)
+            if (hotBarSlot->IconTypeB == HotbarSlotType.GeneralAction && hotBarSlot->IconB == 4)
             {
-                string line = macro->Line[lineIndex]->ToString();
-                if (string.IsNullOrEmpty(line))
-                {
-                    if (lineIndex == 0) return null;
-                    break;
-                }
-                macroLines.Add(line);
+                return 3;
             }
 
-            string macroCode = string.Join("\n", macroLines);
-            var match = Regex.Match(macroCode);
-            if (!match.Success) return null;
-
-            var skillName = match.Groups[1].Value;
-            var rowId = PlayerActions?.FirstOrDefault(a => a.Name == skillName)?.RowId;
-            if (rowId == null) return null;
-
-            return ActionManagerInstance->GetAdjustedActionId((uint) rowId);
+            switch(hotBarSlot->CommandType)
+            {
+                case HotbarSlotType.Action:
+                case HotbarSlotType.GeneralAction:
+                case HotbarSlotType.Macro:
+                    return hotBarSlot->IconB;
+                default:
+                    return null;
+            }
         }
     }
 }
