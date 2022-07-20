@@ -1,11 +1,12 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics;
+﻿using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Diagnostics;
 
 namespace HotbarTimers
 {
-    public unsafe class ActionBarSkill : IDisposable
+    public unsafe class ActionBarSkill
     {
         public ActionBarSlot* ActionBarSlot { get; init; }
         public AtkComponentNode* IconComponent { get; init; }
@@ -20,8 +21,9 @@ namespace HotbarTimers
         private AtkTextNode* OriginalCdText;
         private AtkResNode* OriginalOverlay;
 
-        private bool Visible = false;        
-        private static uint NodeIdx = 200;
+        public bool Visible = false;
+        private bool Initialized = false;
+        private static uint NodeIdx = 4271;
 
         public ActionBarSkill(ActionBarSlot* actionBarSlot, AtkComponentNode* iconComponent, 
             string name, int actionBarIndex, int slotIndex)
@@ -31,8 +33,6 @@ namespace HotbarTimers
             Name = name;
             ActionBarIndex = actionBarIndex;
             SlotIndex = slotIndex;
-
-            Initialize();
         }
 
         private void Initialize()
@@ -52,8 +52,7 @@ namespace HotbarTimers
             UIHelper.Link((AtkResNode*)DurationText, (AtkResNode*)StackText);
 
             IconComponent->Component->UldManager.UpdateDrawNodeList();
-
-            Hide(true);
+            Initialized = true;
         }
 
         private AtkImageNode* CreateComboNode()
@@ -106,14 +105,21 @@ namespace HotbarTimers
 
         public void Show(float remainingTime, int stackCount)
         {
-            if (remainingTime < 0.0) remainingTime *= -1;
+            if (!Initialized) Initialize();
 
-            string format = "0";
-            if (remainingTime < 3.0) format = "0.0";
-            DurationText->SetText(remainingTime.ToString(format));
+            if (remainingTime != 0.0)
+            {
+                if (remainingTime < 0.0) remainingTime *= -1;
 
-            UIHelper.Show(DurationText);
+                string format = "0";
+                if (remainingTime < 3.0) format = "0.0";
+                DurationText->SetText(remainingTime.ToString(format));
+
+                UIHelper.Show(DurationText);
+            }
+
             UIHelper.Show(Combo);
+            UIHelper.Hide(OriginalOverlay);
             UIHelper.Hide(OriginalCdText);
 
             if (stackCount > 0 && stackCount < 100)
@@ -125,42 +131,51 @@ namespace HotbarTimers
             Visible = true;
         }
 
-        public void Hide(bool force = false)
+        public void Hide()
         {
-            if (Visible || force)
-            {
-                UIHelper.Show(OriginalCdText);
-                UIHelper.Hide(Combo);
-                UIHelper.Hide(DurationText);
-                UIHelper.Hide(StackText);
+            if (!Initialized) return;
+            UIHelper.Show(OriginalOverlay);
+            UIHelper.Show(OriginalCdText);
+            UIHelper.Hide(Combo);
+            UIHelper.Hide(DurationText);
+            UIHelper.Hide(StackText);
 
-                DurationText->SetText("");
-                StackText->SetText("");
-                
-                Visible = false;
-            }
+            DurationText->SetText("");
+            StackText->SetText("");
+            
+            Visible = false;
         }
 
         public override string ToString() => $"{Name}; Action Bar: {ActionBarIndex}; Slot: {SlotIndex}";
 
         public void Dispose()
         {
-            UIHelper.Show(OriginalOverlay);
-            UIHelper.Show(OriginalCdText);
+            if (Initialized)
+            {
+                UIHelper.Show(OriginalOverlay);
+                UIHelper.Show(OriginalCdText);
 
-            UIHelper.Unlink(StackText);
-            UIHelper.Unlink(DurationText);
-            UIHelper.Unlink(Combo);
-            
-            IconComponent->Component->UldManager.UpdateDrawNodeList();
+                UIHelper.Unlink(StackText);
+                UIHelper.Unlink(DurationText);
+                UIHelper.Unlink(Combo);
+                
+                IconComponent->Component->UldManager.UpdateDrawNodeList();
 
-            UIHelper.Destroy(Combo);
-            UIHelper.Destroy(DurationText);
-            UIHelper.Destroy(StackText);
-
-            GC.SuppressFinalize(this);
+                UIHelper.Destroy(Combo);
+                UIHelper.Destroy(DurationText);
+                UIHelper.Destroy(StackText);
+            }
         }
 
-        ~ActionBarSkill() => Dispose();
+        public override bool Equals(object? obj)
+        {
+            if (obj is ActionBarSkill abs)
+            {
+                return ToString() == abs.ToString();
+            }
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode() => base.GetHashCode();
     }
 }

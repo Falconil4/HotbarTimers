@@ -6,7 +6,6 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Hooking;
 using Dalamud.IoC;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel;
@@ -60,7 +59,7 @@ namespace HotbarTimers
             GameJobsList = dataManager.GetExcelSheet<ClassJob>();
             GameActionsList = dataManager.GetExcelSheet<Action>();
             GameStatusList = dataManager.GetExcelSheet<Status>();
-
+            
             if (FFXIVClientStructs.Resolver.Initialized == false)
             {
                 FFXIVClientStructs.Resolver.Initialize();
@@ -96,7 +95,6 @@ namespace HotbarTimers
 
         private void OnLogin()
         {
-            PluginLog.LogInformation("OnLogin start");
             if (Framework != null)
             {
                 Framework.Update += OnFrameworkUpdate;
@@ -104,15 +102,12 @@ namespace HotbarTimers
 
             ActionBarHook.Enable();
             TimersManager = new TimersManager();
-
-            PluginLog.LogInformation("OnLogin end");
         }
 
         private void OnLogout(object? sender, System.EventArgs e) => OnLogout();
 
         private void OnLogout()
         {
-            PluginLog.LogInformation("OnLogout start");
             if (Framework != null)
             {
                 Framework.Update -= OnFrameworkUpdate;
@@ -120,7 +115,6 @@ namespace HotbarTimers
 
             ActionBarHook.Disable();
             TimersManager.Dispose();
-            PluginLog.LogInformation("OnLogout end");
         }
 
         private void OnFrameworkUpdate(Framework framework)

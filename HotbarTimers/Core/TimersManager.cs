@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dalamud.Logging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -14,14 +15,25 @@ namespace HotbarTimers
         private List<ActionBarSkill> ApplicableSkills = new();
         private List<Status> ApplicableStatuses = new();
 
-        public void OnActionBarUpdate()
+        private DateTime LastActionBarUpdate = DateTime.Now;
+        public void OnActionBarUpdate(bool force = false)
         {
-            ActionBarSkills.ForEach(skill => skill.Dispose());
-            ActionBarSkills = ActionBarSkillBuilder.Build();
+            if (!force)
+            {
+                TimeSpan timeSinceLastUpdate = DateTime.Now - LastActionBarUpdate;
+                if (timeSinceLastUpdate.TotalMilliseconds < 2000) return;
+                LastActionBarUpdate = DateTime.Now;
+            }
 
+            var actionBarSkills = ActionBarSkillBuilder.Build();
+            if (!force && actionBarSkills.SequenceEqual(ActionBarSkills)) return;
+            PluginLog.LogVerbose("OnActionBarUpdate");
+
+            ActionBarSkills.ForEach(skill => skill.Dispose());
+            ActionBarSkills = actionBarSkills;
+             
             ApplicableTimers = GetApplicableTimers();
             ApplicableSkills = GetApplicableSkills();
-            ManageTimers();        
         }
 
         private DateTime LastFrameworkUpdate = DateTime.Now;
@@ -40,7 +52,7 @@ namespace HotbarTimers
 
         public void OnConfigSave()
         {
-            OnActionBarUpdate();
+            OnActionBarUpdate(true);
             ActionBarSkills.ForEach(skill => skill.Hide());
             ManageTimers();
         }
@@ -97,7 +109,7 @@ namespace HotbarTimers
                 Status? status = skillToChange.Value;
 
                 if (status != null) skill.Show(status.RemainingTime, status.StackCount);
-                else skill.Hide();
+                else if (skill.Visible) skill.Hide();
             }
         }
 
