@@ -11,12 +11,12 @@ namespace HotbarTimers
         private int SlotIndex { get; init; }
 
         private AtkComponentNode* IconComponent { get; init; }
-        private AtkResNode** NodeList;
+        private readonly AtkResNode** NodeList;
         private AtkImageNode* Combo;
         private AtkTextNode* DurationText;
         private AtkTextNode* StackText;
-        private AtkTextNode* OriginalCdText;
-        private AtkResNode* OriginalOverlay;
+        private readonly AtkTextNode* OriginalCdText;
+        private readonly AtkResNode* OriginalOverlay;
 
         private bool Initialized = false;
         private static uint NodeIdx = 4271;
